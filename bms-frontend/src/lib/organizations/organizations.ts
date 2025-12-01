@@ -83,3 +83,4 @@ export async function createOrganization(input: CreateOrganizationInput): Promis
     _id: result.insertedId.toString(),
   } as Organization;
 }
+

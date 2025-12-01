@@ -274,3 +274,4 @@ export async function listUnits(query: Record<string, unknown> = {}): Promise<Un
 
   return collection.find(query as Document).toArray();
 }
+

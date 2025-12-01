@@ -257,3 +257,4 @@ export function getMenuItemsForRole(userRoles: UserRole[]): MenuItem[] {
       return item;
     });
 }
+

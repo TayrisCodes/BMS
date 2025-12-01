@@ -30,3 +30,4 @@ export function MobileCard({ children, title, className, onClick }: MobileCardPr
 
   return content;
 }
+

@@ -48,3 +48,4 @@ export async function apiPatch<T>(endpoint: string, data?: unknown): Promise<T> 
 export async function apiDelete<T>(endpoint: string): Promise<T> {
   return apiCall<T>(endpoint, { method: 'DELETE' });
 }
+

@@ -470,3 +470,4 @@ export async function generateInvoiceForLease(
 
   return await createInvoice(invoiceInput);
 }
+

@@ -206,3 +206,4 @@ export function hasAnyRolePermission(
 ): boolean {
   return roles.some((role) => hasPermission(role, module, action));
 }
+

@@ -435,3 +435,4 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     </header>
   );
 }
+

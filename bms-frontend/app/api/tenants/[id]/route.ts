@@ -228,3 +228,4 @@ export async function DELETE(request: Request, routeParams: RouteParams) {
     return NextResponse.json({ error: 'Unexpected error while deleting tenant' }, { status: 500 });
   }
 }
+

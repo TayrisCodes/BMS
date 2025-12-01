@@ -477,3 +477,4 @@ export async function listPayments(query: Record<string, unknown> = {}): Promise
     .sort({ paymentDate: -1 })
     .toArray();
 }
+

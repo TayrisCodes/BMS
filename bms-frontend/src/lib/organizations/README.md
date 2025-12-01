@@ -119,3 +119,4 @@ Users with the `SUPER_ADMIN` role can:
 
 For regular operations, even SUPER_ADMIN should use organization scoping unless cross-org access is explicitly needed.
 
+

@@ -57,3 +57,4 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     refetch: fetchStats,
   };
 }
+

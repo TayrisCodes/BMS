@@ -34,3 +34,4 @@ export async function POST() {
     return NextResponse.json({ error: 'Unexpected error while ensuring indexes' }, { status: 500 });
   }
 }
+
