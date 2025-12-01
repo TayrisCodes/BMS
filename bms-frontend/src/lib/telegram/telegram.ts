@@ -51,4 +51,3 @@ export async function sendOtpViaTelegram(phone: string, code: string): Promise<b
 
   return sendTelegramMessage(message);
 }
-

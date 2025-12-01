@@ -58,4 +58,3 @@ export function MobileList<T = unknown>({
     </div>
   );
 }
-

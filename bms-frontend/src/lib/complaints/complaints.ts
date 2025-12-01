@@ -348,4 +348,3 @@ export async function listComplaints(query: Record<string, unknown> = {}): Promi
     .sort({ priority: 1, createdAt: -1 })
     .toArray();
 }
-

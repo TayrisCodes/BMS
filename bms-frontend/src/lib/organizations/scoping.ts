@@ -79,4 +79,3 @@ export function validateOrganizationAccess(
     throw new Error('Access denied: resource belongs to a different organization');
   }
 }
-

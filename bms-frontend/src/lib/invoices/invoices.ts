@@ -484,4 +484,3 @@ export async function listInvoices(query: Record<string, unknown> = {}): Promise
     .sort({ issueDate: -1 })
     .toArray();
 }
-

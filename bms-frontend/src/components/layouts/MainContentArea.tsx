@@ -13,4 +13,3 @@ export function MainContentArea({ children, className }: MainContentAreaProps) {
     </main>
   );
 }
-

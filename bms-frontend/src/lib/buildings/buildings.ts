@@ -192,4 +192,3 @@ export async function listBuildings(query: Record<string, unknown> = {}): Promis
 
   return collection.find(query as Document).toArray();
 }
-

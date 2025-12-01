@@ -43,4 +43,3 @@ export function DashboardPage({ title, breadcrumbs, children, className }: Dashb
     </div>
   );
 }
-

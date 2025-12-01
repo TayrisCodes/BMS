@@ -124,4 +124,3 @@ export async function markOtpAsConsumed(otpId: string): Promise<void> {
     { $set: { consumed: true } } as Document,
   );
 }
-

@@ -51,4 +51,3 @@ export function useRecentActivity(): UseRecentActivityReturn {
     error,
   };
 }
-

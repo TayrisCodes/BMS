@@ -29,4 +29,3 @@ export function DashboardLayout({ children, userRoles }: DashboardLayoutProps) {
     </div>
   );
 }
-

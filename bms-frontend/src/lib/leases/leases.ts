@@ -452,4 +452,3 @@ export async function listLeases(query: Record<string, unknown> = {}): Promise<L
 
   return collection.find(query as Document).toArray();
 }
-

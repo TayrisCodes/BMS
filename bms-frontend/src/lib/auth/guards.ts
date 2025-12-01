@@ -119,4 +119,3 @@ export async function requireSuperAdmin(): Promise<AuthContext> {
 export async function getSessionOrNull(): Promise<AuthContext | null> {
   return getCurrentSession();
 }
-

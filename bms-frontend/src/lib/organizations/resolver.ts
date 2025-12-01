@@ -80,4 +80,3 @@ export function getOrganizationIdFromContext(
 
   return context.organizationId;
 }
-
