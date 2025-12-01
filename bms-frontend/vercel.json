@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/payment-due-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/lease-expiring-reminders",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}
