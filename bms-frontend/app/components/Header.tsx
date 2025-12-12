@@ -63,8 +63,13 @@ export default function Header() {
     }
   }
 
-  // Don't show header on homepage
-  if (pathname === '/') {
+  // Don't show header on homepage or dashboard pages (they have their own Topbar)
+  if (
+    pathname === '/' ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/org') ||
+    pathname.startsWith('/tenant/dashboard')
+  ) {
     return null;
   }
 

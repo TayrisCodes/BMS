@@ -121,8 +121,104 @@ export default function TenantProfilePage() {
     }
   };
 
-  // Note: Password change is not implemented for tenants as they use OTP-based authentication
-  // This section can be added later if password auth is implemented for tenants
+  const handleChangePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    setErrors({});
+
+    const formData = new FormData(e.currentTarget);
+    const currentPassword = formData.get('currentPassword')?.toString() || '';
+    const newPassword = formData.get('newPassword')?.toString() || '';
+    const confirmPassword = formData.get('confirmPassword')?.toString() || '';
+
+    // Validation
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setErrors({ password: 'All password fields are required' });
+      setSaving(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrors({ password: 'New passwords do not match' });
+      setSaving(false);
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setErrors({ password: 'Password must be at least 8 characters long' });
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/tenant/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Password changed successfully');
+        (e.target as HTMLFormElement).reset();
+      } else {
+        const data = await response.json();
+        setErrors({ password: data.error || 'Failed to change password' });
+      }
+    } catch (error) {
+      console.error('Failed to change password:', error);
+      setErrors({ password: 'Failed to change password. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePhone = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    setErrors({});
+
+    const formData = new FormData(e.currentTarget);
+    const newPhone = formData.get('newPhone')?.toString() || '';
+    const password = formData.get('phonePassword')?.toString() || '';
+
+    // Validation
+    if (!newPhone || !password) {
+      setErrors({ phone: 'Phone number and password are required' });
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/tenant/change-phone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newPhone,
+          password,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Phone number changed successfully. Please log in again.');
+        router.push('/tenant/login');
+      } else {
+        const data = await response.json();
+        setErrors({ phone: data.error || 'Failed to change phone number' });
+      }
+    } catch (error) {
+      console.error('Failed to change phone:', error);
+      setErrors({ phone: 'Failed to change phone number. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -208,9 +304,6 @@ export default function TenantProfilePage() {
                 disabled
                 className="flex h-12 w-full rounded-md border border-input bg-muted px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
               />
-              <p className="text-xs text-muted-foreground">
-                Phone number cannot be changed. Contact your building manager to update.
-              </p>
             </div>
 
             <MobileFormField
@@ -255,6 +348,70 @@ export default function TenantProfilePage() {
 
       {/* Notification Preferences Card */}
       <NotificationPreferencesSection />
+
+      {/* Change Password Card */}
+      <MobileCard>
+        <h2 className="text-lg font-semibold mb-4">Change Password</h2>
+        <MobileForm onSubmit={handleChangePassword} isLoading={saving} submitLabel="Change Password">
+          <div className="space-y-4">
+            <MobileFormField
+              label="Current Password"
+              name="currentPassword"
+              type="password"
+              placeholder="Enter current password"
+              required
+              {...(errors.password ? { error: errors.password } : {})}
+            />
+            <MobileFormField
+              label="New Password"
+              name="newPassword"
+              type="password"
+              placeholder="Enter new password"
+              required
+              minLength={8}
+            />
+            <MobileFormField
+              label="Confirm New Password"
+              name="confirmPassword"
+              type="password"
+              placeholder="Confirm new password"
+              required
+              minLength={8}
+            />
+            <p className="text-xs text-muted-foreground">
+              Password must be at least 8 characters and include uppercase, lowercase, number, and
+              special character
+            </p>
+          </div>
+        </MobileForm>
+      </MobileCard>
+
+      {/* Change Phone Number Card */}
+      <MobileCard>
+        <h2 className="text-lg font-semibold mb-4">Change Phone Number</h2>
+        <MobileForm onSubmit={handleChangePhone} isLoading={saving} submitLabel="Change Phone">
+          <div className="space-y-4">
+            <MobileFormField
+              label="New Phone Number"
+              name="newPhone"
+              type="tel"
+              placeholder="+251912345678"
+              required
+              {...(errors.phone ? { error: errors.phone } : {})}
+            />
+            <MobileFormField
+              label="Confirm with Password"
+              name="phonePassword"
+              type="password"
+              placeholder="Enter your password"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              You will need to log in again after changing your phone number
+            </p>
+          </div>
+        </MobileForm>
+      </MobileCard>
 
       {/* Account Information Card */}
       <MobileCard>

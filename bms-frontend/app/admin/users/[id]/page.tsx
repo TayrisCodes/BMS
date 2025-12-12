@@ -13,6 +13,7 @@ import {
 } from '@/lib/components/ui/card';
 import { Badge } from '@/lib/components/ui/badge';
 import { Label } from '@/lib/components/ui/label';
+import { Input } from '@/lib/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ import {
   Calendar,
   Activity,
   AlertTriangle,
+  Key,
 } from 'lucide-react';
 import {
   Dialog,
@@ -80,6 +82,11 @@ export default function UserDetailPage() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<UserStatus | null>(null);
   const [suspensionReason, setSuspensionReason] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -191,6 +198,54 @@ export default function UserDetailPage() {
     }
   }
 
+  async function handlePasswordReset() {
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Both password fields are required');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return;
+    }
+
+    try {
+      setResettingPassword(true);
+      const response = await fetch(`/api/users/${userId}/password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPasswordSuccess(true);
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => {
+          setPasswordSuccess(false);
+        }, 3000);
+      } else {
+        setPasswordError(data.error || 'Failed to reset password');
+      }
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to reset password');
+    } finally {
+      setResettingPassword(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -258,6 +313,7 @@ export default function UserDetailPage() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="roles">Roles</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
+          <TabsTrigger value="password">Password</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
@@ -521,6 +577,108 @@ export default function UserDetailPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* Password Tab */}
+        <TabsContent value="password">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reset Password</CardTitle>
+              <CardDescription>
+                Reset the password for this user. The user will need to use this new password to log
+                in.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {canEdit ? (
+                <>
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Note:</strong> You can reset this user&apos;s password. The new password
+                      must meet the following requirements:
+                    </p>
+                    <ul className="text-sm text-muted-foreground mt-2 list-disc list-inside space-y-1">
+                      <li>Minimum 8 characters</li>
+                      <li>At least one uppercase letter</li>
+                      <li>At least one lowercase letter</li>
+                      <li>At least one number</li>
+                      <li>At least one special character</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          setPasswordError(null);
+                          setPasswordSuccess(false);
+                        }}
+                        placeholder="Enter new password"
+                        disabled={resettingPassword}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          setPasswordError(null);
+                          setPasswordSuccess(false);
+                        }}
+                        placeholder="Confirm new password"
+                        disabled={resettingPassword}
+                      />
+                    </div>
+
+                    {passwordError && (
+                      <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
+                        {passwordError}
+                      </div>
+                    )}
+
+                    {passwordSuccess && (
+                      <div className="p-4 rounded-md bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 text-sm">
+                        Password reset successfully!
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={handlePasswordReset}
+                      disabled={resettingPassword || !newPassword || !confirmPassword}
+                    >
+                      {resettingPassword ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        <>
+                          <Key className="mr-2 h-4 w-4" />
+                          Reset Password
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    You do not have permission to reset passwords. Only SUPER_ADMIN and ORG_ADMIN
+                    can reset user passwords.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Activity Tab */}

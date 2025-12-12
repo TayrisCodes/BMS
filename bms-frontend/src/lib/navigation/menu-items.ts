@@ -21,6 +21,8 @@ import {
   Receipt,
   TrendingUp,
   AlertCircle,
+  Activity,
+  Flag,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -60,6 +62,24 @@ export const menuItems: MenuItem[] = [
     roles: ['SUPER_ADMIN'],
   },
   {
+    label: 'Monitoring',
+    icon: Activity,
+    path: '/admin/monitoring',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    label: 'Subscriptions',
+    icon: CreditCard,
+    path: '/admin/subscriptions',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    label: 'Analytics',
+    icon: BarChart3,
+    path: '/admin/analytics',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
     label: 'Users',
     icon: Users,
     path: '/admin/users',
@@ -70,6 +90,12 @@ export const menuItems: MenuItem[] = [
     icon: FileCheck,
     path: '/admin/audit-logs',
     roles: ['SUPER_ADMIN', 'AUDITOR'],
+  },
+  {
+    label: 'Feature Flags',
+    icon: Flag,
+    path: '/admin/feature-flags',
+    roles: ['SUPER_ADMIN'],
   },
   {
     label: 'Buildings',

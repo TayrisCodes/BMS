@@ -23,12 +23,69 @@ export async function GET() {
 
     if (isSuperAdmin(context)) {
       // SUPER_ADMIN sees cross-org stats
-      const [organizations, buildings, tenants, users] = await Promise.all([
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+      const [
+        organizations,
+        buildings,
+        tenants,
+        users,
+        activeSubscriptions,
+        subscriptions,
+        payments,
+        newOrgsThisMonth,
+        newUsersThisMonth,
+      ] = await Promise.all([
         db.collection('organizations').countDocuments({}),
         db.collection('buildings').countDocuments({}),
         db.collection('tenants').countDocuments({}),
         db.collection('users').countDocuments({}),
+        db.collection('subscriptions').countDocuments({ status: { $in: ['active', 'trial'] } }),
+        db.collection('subscriptions').find({}).toArray(),
+        db
+          .collection('payments')
+          .aggregate([
+            { $match: { status: 'completed' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ])
+          .toArray(),
+        db.collection('organizations').countDocuments({
+          createdAt: { $gte: startOfMonth },
+        }),
+        db.collection('users').countDocuments({
+          createdAt: { $gte: startOfMonth },
+        }),
       ]);
+
+      // Calculate revenue metrics
+      const totalRevenue = payments[0]?.total || 0;
+
+      // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
+      let mrr = 0;
+      const activeSubs = subscriptions.filter(
+        (sub: { status: string }) => sub.status === 'active' || sub.status === 'trial',
+      );
+      for (const sub of activeSubs) {
+        if (sub.billingCycle === 'monthly') {
+          mrr += sub.price || 0;
+        } else if (sub.billingCycle === 'quarterly') {
+          mrr += (sub.price || 0) / 3;
+        } else if (sub.billingCycle === 'annually') {
+          mrr += (sub.price || 0) / 12;
+        }
+      }
+
+      // Calculate ARR (Annual Recurring Revenue)
+      const arr = mrr * 12;
+
+      // Subscription tier distribution
+      const tierDistribution = {
+        starter: subscriptions.filter((s: { tier: string }) => s.tier === 'starter').length,
+        growth: subscriptions.filter((s: { tier: string }) => s.tier === 'growth').length,
+        enterprise: subscriptions.filter((s: { tier: string }) => s.tier === 'enterprise').length,
+      };
 
       return NextResponse.json({
         stats: {
@@ -36,6 +93,14 @@ export async function GET() {
           totalBuildings: buildings,
           totalTenants: tenants,
           totalUsers: users,
+          activeSubscriptions,
+          totalSubscriptions: subscriptions.length,
+          totalRevenue,
+          mrr: Math.round(mrr),
+          arr: Math.round(arr),
+          newOrganizationsThisMonth: newOrgsThisMonth,
+          newUsersThisMonth: newUsersThisMonth,
+          subscriptionTierDistribution: tierDistribution,
           systemHealth: 'healthy',
         },
       });

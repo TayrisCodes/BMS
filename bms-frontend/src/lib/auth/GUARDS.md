@@ -234,5 +234,3 @@ export default async function BuildingsPage() {
 
 4. **Test redirect after login**:
    - Visit `/admin?redirect=/admin/buildings` → Login → Should redirect to `/admin/buildings`
-
-

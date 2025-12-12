@@ -467,5 +467,3 @@
   - All components are responsive and support light/dark themes.
   - No layout conflicts between admin and tenant portals.
   - Performance is acceptable (lazy loading, optimized assets).
-
-

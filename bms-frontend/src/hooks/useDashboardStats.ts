@@ -12,6 +12,18 @@ interface DashboardStats {
   pendingComplaints?: number;
   totalOrganizations?: number;
   totalTenants?: number;
+  totalUsers?: number;
+  activeSubscriptions?: number;
+  totalSubscriptions?: number;
+  mrr?: number;
+  arr?: number;
+  newOrganizationsThisMonth?: number;
+  newUsersThisMonth?: number;
+  subscriptionTierDistribution?: {
+    starter: number;
+    growth: number;
+    enterprise: number;
+  };
   systemHealth?: string;
   [key: string]: unknown;
 }

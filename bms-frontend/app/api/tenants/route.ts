@@ -8,6 +8,8 @@ import {
   listTenants,
   type CreateTenantInput,
 } from '@/lib/tenants/tenants';
+import { createUser } from '@/lib/auth/users';
+import * as bcrypt from 'bcryptjs';
 
 /**
  * GET /api/tenants
@@ -114,12 +116,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
     }
 
-    const body = (await request.json()) as Partial<CreateTenantInput>;
+    const body = (await request.json()) as Partial<CreateTenantInput> & {
+      password?: string;
+      unitId?: string | null;
+      leaseData?: {
+        startDate: string;
+        endDate?: string | null;
+        rentAmount: number;
+        depositAmount?: number | null;
+        billingCycle: 'monthly' | 'quarterly' | 'annually';
+        dueDay: number;
+      } | null;
+    };
 
     // Validate required fields
     if (!body.firstName || !body.lastName || !body.primaryPhone) {
       return NextResponse.json(
         { error: 'firstName, lastName, and primaryPhone are required' },
+        { status: 400 },
+      );
+    }
+
+    // Password is required for tenant creation
+    if (!body.password || body.password.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Password is required for tenant account creation' },
+        { status: 400 },
+      );
+    }
+
+    // Validate password strength
+    const { validatePassword } = await import('@/lib/auth/password-policy');
+    const passwordValidation = validatePassword(body.password);
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        {
+          error: 'Password does not meet requirements',
+          errors: passwordValidation.errors,
+        },
         { status: 400 },
       );
     }
@@ -130,6 +164,16 @@ export async function POST(request: Request) {
     if (existingTenant) {
       return NextResponse.json(
         { error: 'Tenant with this phone number already exists in your organization' },
+        { status: 409 },
+      );
+    }
+
+    // Check if user with same phone already exists
+    const { findUserByPhone } = await import('@/lib/auth/users');
+    const existingUser = await findUserByPhone(body.primaryPhone, organizationId);
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'User with this phone number already exists in your organization' },
         { status: 409 },
       );
     }
@@ -149,6 +193,52 @@ export async function POST(request: Request) {
     };
 
     const tenant = await createTenant(input);
+
+    try {
+      // Create user account for tenant
+      const passwordHash = await bcrypt.hash(body.password, 10);
+      const user = await createUser({
+        organizationId,
+        phone: body.primaryPhone,
+        email: body.email ?? null,
+        passwordHash,
+        roles: ['TENANT'],
+        status: 'active',
+      });
+
+      // Link user to tenant
+      const { updateUser } = await import('@/lib/auth/users');
+      await updateUser(user._id, { tenantId: tenant._id }, false);
+    } catch (userError) {
+      // If user creation fails, delete the tenant to maintain consistency
+      const { deleteTenant } = await import('@/lib/tenants/tenants');
+      await deleteTenant(tenant._id);
+      console.error('Failed to create user for tenant:', userError);
+      throw new Error('Failed to create user account for tenant');
+    }
+
+    // Create lease if unitId and leaseData are provided
+    if (body.unitId && body.leaseData) {
+      try {
+        const { createLease } = await import('@/lib/leases/leases');
+        await createLease({
+          organizationId,
+          tenantId: tenant._id,
+          unitId: body.unitId,
+          startDate: body.leaseData.startDate,
+          endDate: body.leaseData.endDate || null,
+          rentAmount: body.leaseData.rentAmount,
+          depositAmount: body.leaseData.depositAmount || null,
+          billingCycle: body.leaseData.billingCycle,
+          dueDay: body.leaseData.dueDay,
+          status: 'active',
+        });
+      } catch (leaseError) {
+        console.error('Failed to create lease for tenant:', leaseError);
+        // Don't fail the tenant creation if lease creation fails
+        // The lease can be created later manually
+      }
+    }
 
     return NextResponse.json(
       {

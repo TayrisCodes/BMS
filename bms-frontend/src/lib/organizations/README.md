@@ -118,5 +118,3 @@ Users with the `SUPER_ADMIN` role can:
 - Seed initial ORG_ADMIN users for organizations
 
 For regular operations, even SUPER_ADMIN should use organization scoping unless cross-org access is explicitly needed.
-
-

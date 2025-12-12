@@ -217,3 +217,11 @@ rm -f /tmp/bms_buildings_cookies.txt
 
 
 
+
+
+
+
+
+
+
+

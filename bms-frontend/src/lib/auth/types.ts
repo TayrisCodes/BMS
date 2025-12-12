@@ -27,6 +27,7 @@ export interface User {
   passwordHash: string;
   roles: UserRole[];
   status: UserStatus;
+  tenantId?: string | null; // ObjectId ref to tenants (for users with TENANT role)
   notificationPreferences?: NotificationPreferences | null;
   name?: string | null;
   invitedBy?: string | null; // ObjectId ref to users

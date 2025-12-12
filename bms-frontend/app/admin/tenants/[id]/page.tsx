@@ -228,42 +228,85 @@ export default function TenantDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Lease History</CardTitle>
-            <CardDescription>Current and past leases ({leases.length})</CardDescription>
+            <CardTitle>Unit & Lease History</CardTitle>
+            <CardDescription>
+              Complete history of units occupied by this tenant ({leases.length} lease{leases.length !== 1 ? 's' : ''})
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {leases.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">No leases found</p>
             ) : (
               <div className="space-y-4">
-                {leases.map((lease) => {
-                  const unit = units[lease.unitId];
-                  const building = unit ? buildings[unit.buildingId] : null;
-                  return (
-                    <div key={lease._id} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">
-                            {building?.name} - {unit?.unitNumber || 'N/A'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(lease.startDate).toLocaleDateString()} -{' '}
-                            {lease.endDate
-                              ? new Date(lease.endDate).toLocaleDateString()
-                              : 'Ongoing'}
-                          </p>
+                {leases
+                  .sort((a, b) => {
+                    // Sort by start date, newest first
+                    return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+                  })
+                  .map((lease) => {
+                    const unit = units[lease.unitId];
+                    const building = unit ? buildings[unit.buildingId] : null;
+                    const isActive = lease.status === 'active';
+                    return (
+                      <div
+                        key={lease._id}
+                        className={`border rounded-lg p-4 space-y-2 ${
+                          isActive ? 'border-primary bg-primary/5' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <Link href={`/admin/units/${lease.unitId}`}>
+                                <p className="font-medium hover:text-primary cursor-pointer">
+                                  {building?.name} - {unit?.unitNumber || 'N/A'}
+                                </p>
+                              </Link>
+                              {isActive && (
+                                <Badge variant="default" className="text-xs">
+                                  Current
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              <span className="font-medium">Period:</span>{' '}
+                              {new Date(lease.startDate).toLocaleDateString()} -{' '}
+                              {lease.endDate
+                                ? new Date(lease.endDate).toLocaleDateString()
+                                : 'Ongoing (Month-to-Month)'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">Rent:</span> ETB{' '}
+                              {lease.rentAmount.toLocaleString()}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              lease.status === 'active'
+                                ? 'default'
+                                : lease.status === 'terminated'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                          >
+                            {lease.status}
+                          </Badge>
                         </div>
-                        <Badge variant="default">{lease.status}</Badge>
+                        <div className="flex gap-2 pt-2">
+                          <Link href={`/admin/leases/${lease._id}`} className="flex-1">
+                            <Button variant="outline" size="sm" className="w-full">
+                              View Lease Details
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/units/${lease.unitId}`} className="flex-1">
+                            <Button variant="ghost" size="sm" className="w-full">
+                              View Unit
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
-                      <p className="text-sm">Rent: ETB {lease.rentAmount.toLocaleString()}</p>
-                      <Link href={`/admin/leases/${lease._id}`}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          View Lease
-                        </Button>
-                      </Link>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
           </CardContent>

@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/lib/utils';
 
 interface Breadcrumb {
@@ -15,22 +17,30 @@ interface DashboardPageProps {
 
 export function DashboardPage({ title, breadcrumbs, children, className }: DashboardPageProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-6 p-6', className)}>
       {(title || breadcrumbs) && (
         <div className="space-y-2">
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+            <nav
+              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              aria-label="Breadcrumb"
+            >
               {breadcrumbs.map((crumb, index) => (
-                <span key={index} className="flex items-center gap-2">
+                <div key={index} className="flex items-center gap-1.5">
                   {crumb.href ? (
-                    <a href={crumb.href} className="hover:text-foreground transition-colors">
+                    <Link
+                      href={crumb.href}
+                      className="hover:text-foreground transition-colors font-medium"
+                    >
                       {crumb.label}
-                    </a>
+                    </Link>
                   ) : (
-                    <span>{crumb.label}</span>
+                    <span className="text-foreground font-medium">{crumb.label}</span>
                   )}
-                  {index < breadcrumbs.length - 1 && <span>/</span>}
-                </span>
+                  {index < breadcrumbs.length - 1 && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
               ))}
             </nav>
           )}

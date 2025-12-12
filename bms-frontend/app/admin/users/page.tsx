@@ -98,15 +98,22 @@ export default function UsersPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      // Fetch all users for stats (with high limit)
-      const allUsers = await apiGet<UsersResponse>('/api/users?limit=1000');
-      const userList = allUsers.users || [];
+      // Use dedicated stats endpoint instead of fetching all users
+      const data = await apiGet<{
+        stats: {
+          total: number;
+          active: number;
+          invited: number;
+          inactive: number;
+          suspended: number;
+        };
+      }>('/api/users/stats');
 
       setStats({
-        total: allUsers.pagination?.total || userList.length,
-        active: userList.filter((u) => u.status === 'active').length,
-        invited: userList.filter((u) => u.status === 'invited').length,
-        suspended: userList.filter((u) => u.status === 'suspended').length,
+        total: data.stats.total || 0,
+        active: data.stats.active || 0,
+        invited: data.stats.invited || 0,
+        suspended: data.stats.suspended || 0,
       });
     } catch (err) {
       console.error('Failed to fetch stats:', err);
@@ -138,16 +145,19 @@ export default function UsersPage() {
       const data = await apiGet<UsersResponse>(`/api/users?${params.toString()}`);
       setUsers(data.users || []);
       setPagination(data.pagination || pagination);
-
-      // Fetch stats separately
-      await fetchStats();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
       setIsLoading(false);
     }
-  }, [page, roleFilter, statusFilter, searchTerm, pagination, fetchStats]);
+  }, [page, roleFilter, statusFilter, searchTerm]);
 
+  // Fetch stats only once on mount
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Fetch users when filters change
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);

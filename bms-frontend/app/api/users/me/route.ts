@@ -6,6 +6,40 @@ import { getDb } from '@/lib/db';
 import type { User } from '@/lib/auth/types';
 
 /**
+ * Safely converts organizationId to a valid ObjectId string.
+ * Returns null if organizationId is invalid, empty, or not a valid ObjectId string.
+ * Handles both string and ObjectId instance inputs.
+ */
+function safeObjectIdFromString(value: unknown): string | null {
+  if (!value) return null;
+
+  // If it's already an ObjectId instance (from MongoDB), convert to string
+  if (typeof value === 'object' && value !== null && 'toString' in value) {
+    try {
+      const str = value.toString();
+      // Validate it's a 24 character hex string
+      if (str && /^[0-9a-fA-F]{24}$/.test(str)) {
+        return str;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  // If it's a string, validate it's a valid ObjectId format
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    // Must be exactly 24 hex characters (MongoDB ObjectId format)
+    if (trimmed && trimmed.length === 24 && /^[0-9a-fA-F]{24}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+
+  return null;
+}
+
+/**
  * GET /api/users/me
  * Get current user's profile.
  * Returns user details from session.
@@ -22,14 +56,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get organization name if organizationId exists
+    // Get organization name if organizationId exists and is valid
     let organizationName: string | null = null;
-    if (user.organizationId) {
+    const validOrgId = safeObjectIdFromString(user.organizationId);
+    if (validOrgId) {
       try {
         const db = await getDb();
         const { ObjectId } = await import('mongodb');
         const org = await db.collection('organizations').findOne({
-          _id: new ObjectId(user.organizationId),
+          _id: new ObjectId(validOrgId),
         });
         if (org) {
           organizationName = org.name || null;
@@ -142,14 +177,15 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }
 
-    // Get organization name if organizationId exists
+    // Get organization name if organizationId exists and is valid
     let organizationName: string | null = null;
-    if (updatedUser.organizationId) {
+    const validOrgId = safeObjectIdFromString(updatedUser.organizationId);
+    if (validOrgId) {
       try {
         const db = await getDb();
         const { ObjectId } = await import('mongodb');
         const org = await db.collection('organizations').findOne({
-          _id: new ObjectId(updatedUser.organizationId),
+          _id: new ObjectId(validOrgId),
         });
         if (org) {
           organizationName = org.name || null;

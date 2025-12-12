@@ -204,5 +204,3 @@ Seed endpoints are available for development:
 - `POST /api/auth/seed-tenant` - Creates TENANT (via tenant collection)
 
 All seed endpoints are disabled in production.
-
-

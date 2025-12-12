@@ -40,10 +40,38 @@ async function verifySessionToken(token: string): Promise<{
 
 /**
  * Middleware to protect routes and redirect unauthenticated users.
+ * Also handles subdomain-based organization routing.
  * Runs on the edge before the request reaches the route handler.
+ * Note: Cannot use MongoDB in middleware (Edge runtime limitation).
+ * Subdomain resolution happens in API routes/route handlers.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+
+  // Extract subdomain from hostname (for development: subdomain.localhost:3000)
+  // For production: subdomain.bms.com
+  const subdomain = hostname.split('.')[0];
+
+  // Check if this is a subdomain request (not main domain)
+  // In development: localhost:3000 has no subdomain, but org-name.localhost:3000 does
+  // In production: bms.com has no subdomain, but org-name.bms.com does
+  const isSubdomainRequest =
+    (hostname.includes('localhost') && subdomain !== 'localhost' && subdomain !== '127.0.0.1') ||
+    (hostname.includes('.bms.com') &&
+      !hostname.startsWith('bms.com') &&
+      !hostname.startsWith('www.bms.com'));
+
+  // If subdomain request, add subdomain to headers for later resolution
+  // Note: Full organization resolution happens in route handlers/API routes
+  // to avoid blocking middleware with database calls (Edge runtime doesn't support MongoDB)
+  if (isSubdomainRequest && subdomain) {
+    const response = NextResponse.next();
+    // Add subdomain to headers for organization resolution in route handlers
+    response.headers.set('x-organization-subdomain', subdomain);
+    // Route handlers can use this to look up organization
+    return response;
+  }
 
   // Public routes that don't require authentication
   const publicRoutes = [

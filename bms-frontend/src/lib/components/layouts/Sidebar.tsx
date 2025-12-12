@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/lib/utils';
 import { getMenuItemsForRole } from '@/lib/navigation/menu-items';
 import type { UserRole } from '@/lib/auth/types';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Zap } from 'lucide-react';
 import { Button } from '@/lib/components/ui/button';
+import { Badge } from '@/lib/components/ui/badge';
 
 interface SidebarProps {
   userRoles: UserRole[];
@@ -21,6 +22,7 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
   // Load collapsed state from localStorage
   useEffect(() => {
@@ -34,6 +36,42 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, JSON.stringify(collapsed));
   }, [collapsed]);
+
+  // Fetch pending counts for badges (only for SUPER_ADMIN)
+  useEffect(() => {
+    if (userRoles.includes('SUPER_ADMIN')) {
+      async function fetchPendingCounts() {
+        try {
+          // Fetch pending subscriptions, invitations, etc.
+          const [subscriptionsRes, usersRes] = await Promise.all([
+            fetch('/api/subscriptions/stats').catch(() => null),
+            fetch('/api/users/stats').catch(() => null),
+          ]);
+
+          const counts: Record<string, number> = {};
+
+          if (subscriptionsRes?.ok) {
+            const subData = await subscriptionsRes.json();
+            counts.subscriptions = subData.stats?.trial || 0;
+          }
+
+          if (usersRes?.ok) {
+            const userData = await usersRes.json();
+            counts.users = userData.stats?.invited || 0;
+          }
+
+          setPendingCounts(counts);
+        } catch (error) {
+          console.error('Failed to fetch pending counts:', error);
+        }
+      }
+
+      fetchPendingCounts();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchPendingCounts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [userRoles]);
 
   const menuItems = getMenuItemsForRole(userRoles);
 
@@ -58,10 +96,17 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
     return pathname.startsWith(path);
   };
 
+  const getBadgeCount = (path: string): number => {
+    if (path === '/admin/subscriptions') return pendingCounts.subscriptions || 0;
+    if (path === '/admin/users') return pendingCounts.users || 0;
+    return 0;
+  };
+
   const renderMenuItem = (item: (typeof menuItems)[0], level = 0) => {
     const active = isActive(item.path);
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.has(item.path);
+    const badgeCount = getBadgeCount(item.path);
 
     return (
       <div key={item.path} className={cn(level > 0 && 'ml-4')}>
@@ -84,7 +129,16 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
             )}
           >
             <item.icon className={cn('h-5 w-5 shrink-0', collapsed && level === 0 && 'mx-auto')} />
-            {(!collapsed || level > 0) && <span className="flex-1 truncate">{item.label}</span>}
+            {(!collapsed || level > 0) && (
+              <>
+                <span className="flex-1 truncate">{item.label}</span>
+                {badgeCount > 0 && !collapsed && (
+                  <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs">
+                    {badgeCount > 9 ? '9+' : badgeCount}
+                  </Badge>
+                )}
+              </>
+            )}
             {hasChildren && !collapsed && (
               <ChevronRight
                 className={cn('h-4 w-4 transition-transform', isExpanded && 'transform rotate-90')}
@@ -94,6 +148,11 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
           {collapsed && !hasChildren && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-popover border rounded-md shadow-md text-sm whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
               {item.label}
+              {badgeCount > 0 && (
+                <Badge variant="destructive" className="ml-2 h-4 min-w-4 px-1 text-xs">
+                  {badgeCount}
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -119,7 +178,7 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed md:static inset-y-0 left-0 z-50',
+          'fixed md:static left-0 z-50 h-screen',
           'bg-background border-r border-border',
           'flex flex-col',
           'transition-all duration-300',
@@ -170,6 +229,37 @@ export function Sidebar({ userRoles, onMobileClose, mobileOpen = false }: Sideba
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {menuItems.map((item) => renderMenuItem(item))}
         </nav>
+
+        {/* Quick Actions (only when not collapsed and SUPER_ADMIN) */}
+        {!collapsed && userRoles.includes('SUPER_ADMIN') && (
+          <div className="p-3 border-t border-border space-y-2">
+            <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Quick Actions
+            </div>
+            <Link href="/admin/organizations/new">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => onMobileClose?.()}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Organization
+              </Button>
+            </Link>
+            <Link href="/admin/subscriptions">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => onMobileClose?.()}
+              >
+                <Zap className="h-4 w-4 mr-2" />
+                Manage Subscriptions
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Mobile close hint */}
         {mobileOpen && (

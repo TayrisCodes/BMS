@@ -5,10 +5,23 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/lib/utils';
 import { Button } from '@/lib/components/ui/button';
-import { Search, Bell, Sun, Moon, User, LogOut, Settings, X, Loader2, Menu } from 'lucide-react';
+import {
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  Settings,
+  X,
+  Loader2,
+  Menu,
+  Circle,
+} from 'lucide-react';
 
 interface TopbarProps {
   onMenuClick?: () => void;
+  onSearchClick?: () => void;
 }
 
 interface SearchResult {
@@ -29,7 +42,7 @@ interface Notification {
   link?: string;
 }
 
-export function Topbar({ onMenuClick }: TopbarProps) {
+export function Topbar({ onMenuClick, onSearchClick }: TopbarProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -41,6 +54,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [user, setUser] = useState<{ name?: string; email?: string; roles: string[] } | null>(null);
+  const [systemStatus, setSystemStatus] = useState<'healthy' | 'degraded' | 'down'>('healthy');
   const searchRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -108,6 +122,25 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     fetchNotifications();
   }, []);
 
+  // Fetch system status
+  useEffect(() => {
+    async function fetchSystemStatus() {
+      try {
+        const response = await fetch('/api/health');
+        if (response.ok) {
+          setSystemStatus('healthy');
+        } else {
+          setSystemStatus('degraded');
+        }
+      } catch (error) {
+        setSystemStatus('down');
+      }
+    }
+    fetchSystemStatus();
+    const interval = setInterval(fetchSystemStatus, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, []);
+
   // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -172,8 +205,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center gap-4 px-4">
+    <header className="sticky top-0 z-30 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-16 shrink-0">
+      <div className="flex h-full items-center gap-4 px-4">
         {/* Left section - Mobile menu button */}
         <Button
           variant="ghost"
@@ -194,12 +227,16 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               placeholder="Search buildings, tenants, invoices..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
+              onFocus={() => {
+                setSearchFocused(true);
+                onSearchClick?.();
+              }}
               className={cn(
-                'w-full pl-10 pr-10 py-2 rounded-md border border-input bg-background text-sm',
+                'w-full pl-10 pr-20 py-2 rounded-md border border-input bg-background text-sm',
                 'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-                'md:block hidden',
+                'md:block hidden cursor-pointer',
               )}
+              readOnly
             />
             {searchQuery && (
               <button
@@ -214,14 +251,18 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               variant="ghost"
               size="icon"
               onClick={() => {
-                // TODO: Open full search modal on mobile
-                setSearchFocused(true);
+                onSearchClick?.();
               }}
               className="md:hidden"
               aria-label="Search"
             >
               <Search className="h-5 w-5" />
             </Button>
+            {/* Desktop search hint */}
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 hidden md:flex items-center gap-1 text-xs text-muted-foreground pointer-events-none">
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">⌘</kbd>
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">K</kbd>
+            </div>
           </div>
 
           {/* Search dropdown */}
@@ -261,6 +302,24 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
         {/* Right section */}
         <div className="flex items-center gap-2">
+          {/* System Status Indicator */}
+          <div
+            className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50"
+            title={`System status: ${systemStatus}`}
+          >
+            <Circle
+              className={cn(
+                'h-2 w-2',
+                systemStatus === 'healthy' && 'text-green-500 fill-green-500',
+                systemStatus === 'degraded' && 'text-yellow-500 fill-yellow-500',
+                systemStatus === 'down' && 'text-red-500 fill-red-500',
+              )}
+            />
+            <span className="text-xs text-muted-foreground hidden lg:inline">
+              {systemStatus === 'healthy' ? 'All Systems Operational' : 'System Issues Detected'}
+            </span>
+          </div>
+
           {/* Theme switcher */}
           <Button
             variant="ghost"

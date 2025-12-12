@@ -255,6 +255,23 @@ export async function deleteUser(userId: string, isSuperAdmin = false): Promise<
 }
 
 /**
+ * Find user by phone number, optionally scoped to organization.
+ */
+export async function findUserByPhone(
+  phone: string,
+  organizationId?: string,
+): Promise<User | null> {
+  const collection = await getUsersCollection();
+  const query: Record<string, unknown> = { phone: phone.trim() };
+
+  if (organizationId) {
+    query.organizationId = organizationId;
+  }
+
+  return collection.findOne(query as Document);
+}
+
+/**
  * List users in organization with optional filters.
  */
 export async function findUsersByOrganization(

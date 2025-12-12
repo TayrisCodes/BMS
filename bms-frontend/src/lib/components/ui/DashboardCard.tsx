@@ -20,16 +20,18 @@ interface DashboardCardProps {
   error?: string | null;
   onRetry?: (() => void) | undefined;
   actions?: ReactNode;
-  colSpan?: 1 | 2 | 3 | 4;
+  colSpan?: 1 | 2 | 3 | 4 | 6 | 12;
   emptyMessage?: string;
   empty?: boolean;
 }
 
-const colSpanClasses = {
+const colSpanClasses: Record<1 | 2 | 3 | 4 | 6 | 12, string> = {
   1: 'col-span-1',
   2: 'col-span-1 md:col-span-2',
   3: 'col-span-1 md:col-span-2 lg:col-span-3',
   4: 'col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4',
+  6: 'col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 2xl:col-span-6',
+  12: 'col-span-full',
 };
 
 export function DashboardCard({

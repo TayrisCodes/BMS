@@ -47,6 +47,22 @@ interface Tenant {
   firstName: string;
   lastName: string;
   primaryPhone: string;
+  email?: string | null;
+}
+
+interface TenantHistoryEntry {
+  lease: {
+    _id: string;
+    startDate: string;
+    endDate?: string | null;
+    terminationDate?: string | null;
+    terminationReason?: string | null;
+    rentAmount: number;
+    depositAmount?: number | null;
+    billingCycle: string;
+    status: string;
+  };
+  tenant: Tenant | null;
 }
 
 export default function UnitDetailPage() {
@@ -57,6 +73,9 @@ export default function UnitDetailPage() {
   const [building, setBuilding] = useState<Building | null>(null);
   const [lease, setLease] = useState<Lease | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
+  const [tenantHistory, setTenantHistory] = useState<TenantHistoryEntry[]>([]);
+  const [currentTenant, setCurrentTenant] = useState<TenantHistoryEntry | null>(null);
+  const [previousTenants, setPreviousTenants] = useState<TenantHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,27 +92,25 @@ export default function UnitDetailPage() {
         );
         setBuilding(buildingData.building);
 
-        // Fetch active lease if unit is occupied
-        if (unitData.unit.status === 'occupied') {
-          try {
-            const leasesData = await apiGet<{ leases: Lease[] }>(
-              `/api/leases?unitId=${unitId}&status=active`,
-            );
-            if (leasesData.leases && leasesData.leases.length > 0) {
-              const activeLease = leasesData.leases[0];
-              setLease(activeLease || null);
+        // Fetch tenant history for this unit
+        try {
+          const historyData = await apiGet<{
+            currentTenant: TenantHistoryEntry | null;
+            previousTenants: TenantHistoryEntry[];
+            allHistory: TenantHistoryEntry[];
+          }>(`/api/units/${unitId}/tenants`);
 
-              // Fetch tenant
-              if (activeLease?.tenantId) {
-                const tenantData = await apiGet<{ tenant: Tenant }>(
-                  `/api/tenants/${activeLease.tenantId}`,
-                );
-                setTenant(tenantData.tenant);
-              }
-            }
-          } catch {
-            // No active lease found
+          setCurrentTenant(historyData.currentTenant);
+          setPreviousTenants(historyData.previousTenants);
+          setTenantHistory(historyData.allHistory);
+
+          // Set current lease and tenant for backward compatibility
+          if (historyData.currentTenant) {
+            setLease(historyData.currentTenant.lease as unknown as Lease);
+            setTenant(historyData.currentTenant.tenant);
           }
+        } catch {
+          // No tenant history found
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load unit');
@@ -227,38 +244,49 @@ export default function UnitDetailPage() {
           </CardContent>
         </Card>
 
-        {lease && tenant && (
+        {currentTenant && currentTenant.tenant && (
           <Card>
             <CardHeader>
-              <CardTitle>Current Lease</CardTitle>
+              <CardTitle>Current Tenant</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Tenant</p>
-                <p className="font-medium">
-                  {tenant.firstName} {tenant.lastName}
-                </p>
-                <p className="text-sm text-muted-foreground">{tenant.primaryPhone}</p>
+                <Link href={`/admin/tenants/${currentTenant.tenant._id}`}>
+                  <p className="font-medium hover:text-primary cursor-pointer">
+                    {currentTenant.tenant.firstName} {currentTenant.tenant.lastName}
+                  </p>
+                </Link>
+                <p className="text-sm text-muted-foreground">{currentTenant.tenant.primaryPhone}</p>
+                {currentTenant.tenant.email && (
+                  <p className="text-sm text-muted-foreground">{currentTenant.tenant.email}</p>
+                )}
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="font-medium">{new Date(lease.startDate).toLocaleDateString()}</p>
+                <p className="text-sm text-muted-foreground">Lease Start Date</p>
+                <p className="font-medium">
+                  {new Date(currentTenant.lease.startDate).toLocaleDateString()}
+                </p>
               </div>
-              {lease.endDate && (
+              {currentTenant.lease.endDate && (
                 <div>
-                  <p className="text-sm text-muted-foreground">End Date</p>
-                  <p className="font-medium">{new Date(lease.endDate).toLocaleDateString()}</p>
+                  <p className="text-sm text-muted-foreground">Lease End Date</p>
+                  <p className="font-medium">
+                    {new Date(currentTenant.lease.endDate).toLocaleDateString()}
+                  </p>
                 </div>
               )}
               <div>
                 <p className="text-sm text-muted-foreground">Rent Amount</p>
-                <p className="font-medium">ETB {lease.rentAmount.toLocaleString()}</p>
+                <p className="font-medium">
+                  ETB {currentTenant.lease.rentAmount.toLocaleString()}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant="default">{lease.status}</Badge>
+                <p className="text-sm text-muted-foreground">Billing Cycle</p>
+                <Badge variant="outline">{currentTenant.lease.billingCycle}</Badge>
               </div>
-              <Link href={`/admin/leases/${lease._id}`}>
+              <Link href={`/admin/leases/${currentTenant.lease._id}`}>
                 <Button variant="outline" className="w-full">
                   View Lease Details
                 </Button>
@@ -267,6 +295,85 @@ export default function UnitDetailPage() {
           </Card>
         )}
       </div>
+
+      {/* Tenant History Section */}
+      {tenantHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Tenant History</CardTitle>
+            <CardDescription>
+              Complete history of all tenants who have occupied this unit
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {previousTenants.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
+                    Previous Tenants ({previousTenants.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {previousTenants.map((entry) => (
+                      <div
+                        key={entry.lease._id}
+                        className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            {entry.tenant ? (
+                              <Link href={`/admin/tenants/${entry.tenant._id}`}>
+                                <p className="font-medium hover:text-primary cursor-pointer">
+                                  {entry.tenant.firstName} {entry.tenant.lastName}
+                                </p>
+                              </Link>
+                            ) : (
+                              <p className="font-medium text-muted-foreground">Unknown Tenant</p>
+                            )}
+                            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                              <p>
+                                <span className="font-medium">Period:</span>{' '}
+                                {new Date(entry.lease.startDate).toLocaleDateString()} -{' '}
+                                {entry.lease.endDate
+                                  ? new Date(entry.lease.endDate).toLocaleDateString()
+                                  : entry.lease.terminationDate
+                                    ? new Date(entry.lease.terminationDate).toLocaleDateString()
+                                    : 'Ongoing'}
+                              </p>
+                              <p>
+                                <span className="font-medium">Rent:</span> ETB{' '}
+                                {entry.lease.rentAmount.toLocaleString()} / {entry.lease.billingCycle}
+                              </p>
+                              {entry.lease.terminationReason && (
+                                <p>
+                                  <span className="font-medium">Termination Reason:</span>{' '}
+                                  {entry.lease.terminationReason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <Badge
+                              variant={
+                                entry.lease.status === 'terminated'
+                                  ? 'destructive'
+                                  : entry.lease.status === 'expired'
+                                    ? 'secondary'
+                                    : 'outline'
+                              }
+                            >
+                              {entry.lease.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

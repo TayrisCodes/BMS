@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     if (!user) {
       // Create a user record for the tenant if it doesn't exist
-      const { createUser } = await import('@/lib/auth/users');
+      const { createUser, updateUser } = await import('@/lib/auth/users');
       user = await createUser({
         organizationId: tenant.organizationId,
         phone: tenant.primaryPhone,
@@ -85,6 +85,13 @@ export async function POST(request: Request) {
         roles: ['TENANT'],
         status: 'active',
       });
+      // Link user to tenant
+      await updateUser(user._id, { tenantId: tenant._id }, false);
+    } else if (!user.tenantId) {
+      // Link existing user to tenant if not already linked
+      const { updateUser } = await import('@/lib/auth/users');
+      await updateUser(user._id, { tenantId: tenant._id }, false);
+      user.tenantId = tenant._id;
     }
 
     // Mark OTP as consumed
