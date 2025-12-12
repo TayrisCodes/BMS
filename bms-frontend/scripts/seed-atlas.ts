@@ -3,14 +3,19 @@
  * Seed script for MongoDB Atlas
  * This script seeds initial data to the MongoDB Atlas database
  * Usage: MONGODB_URI="your-connection-string" tsx scripts/seed-atlas.ts
+ * 
+ * REQUIRED: MONGODB_URI environment variable must be set
  */
 
 import { MongoClient, ObjectId, Db } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  'mongodb+srv://bms:bms1234@cluster0.0gwcnq5.mongodb.net/?appName=Cluster0&authSource=admin';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('❌ Error: MONGODB_URI environment variable is required');
+  console.error('Usage: MONGODB_URI="your-connection-string" tsx scripts/seed-atlas.ts');
+  process.exit(1);
+}
 
 // Environment variables with defaults
 const INIT_ORG_ID = process.env.INIT_ORG_ID || 'dev-org-1';

@@ -2,14 +2,19 @@
 /**
  * Create user account for tenant
  * Usage: MONGODB_URI="your-connection-string" tsx scripts/create-tenant-user.ts
+ * 
+ * REQUIRED: MONGODB_URI environment variable must be set
  */
 
 import { MongoClient, ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  'mongodb+srv://bms:bms1234@cluster0.0gwcnq5.mongodb.net/?appName=Cluster0&authSource=admin';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('❌ Error: MONGODB_URI environment variable is required');
+  console.error('Usage: MONGODB_URI="your-connection-string" tsx scripts/create-tenant-user.ts');
+  process.exit(1);
+}
 
 const INIT_ORG_ID = process.env.INIT_ORG_ID || 'dev-org-1';
 const INIT_TENANT_PHONE = process.env.INIT_TENANT_PHONE || '+251912345678';
