@@ -164,12 +164,15 @@ export default function TenantLoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={loginMethod} onValueChange={(v) => {
-            setLoginMethod(v as 'password' | 'otp');
-            setError(null);
-            setOtpSent(false);
-            setOtpCode('');
-          }}>
+          <Tabs
+            value={loginMethod}
+            onValueChange={(v) => {
+              setLoginMethod(v as 'password' | 'otp');
+              setError(null);
+              setOtpSent(false);
+              setOtpCode('');
+            }}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="password" className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />

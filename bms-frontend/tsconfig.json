@@ -45,6 +45,7 @@
       "@/lib/*": ["src/lib/*"],
       "@/modules/*": ["src/modules/*"],
       "@/hooks/*": ["src/hooks/*"],
+      "@/components/*": ["src/components/*"],
       "@/app/*": ["app/*"]
     },
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -57,5 +58,5 @@
     ]
   },
   "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "scripts"]
 }

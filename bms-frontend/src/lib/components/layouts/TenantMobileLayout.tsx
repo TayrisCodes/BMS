@@ -14,6 +14,11 @@ import {
   ChevronLeft,
   ArrowLeft,
   QrCode,
+  Wrench,
+  CreditCard,
+  Plus,
+  HelpCircle,
+  Bot,
 } from 'lucide-react';
 
 interface TenantMobileLayoutProps {
@@ -90,9 +95,26 @@ export function TenantMobileLayout({ children }: TenantMobileLayoutProps) {
   const navigationItems = [
     { icon: Home, label: 'Home', href: '/tenant/dashboard' },
     { icon: Receipt, label: 'Invoices', href: '/tenant/invoices' },
+    { icon: MessageSquare, label: 'Messages', href: '/tenant/messages' },
     { icon: MessageSquare, label: 'Complaints', href: '/tenant/complaints' },
-    { icon: QrCode, label: 'QR Codes', href: '/tenant/visitor-qr-codes' },
+    { icon: Wrench, label: 'Maintenance', href: '/tenant/maintenance' },
+    { icon: Bot, label: 'Assistant', href: '/tenant/bot' },
     { icon: User, label: 'Profile', href: '/tenant/profile' },
+  ];
+
+  const quickActions = [
+    {
+      icon: CreditCard,
+      label: 'Pay Now',
+      href: '/tenant/payments?action=pay',
+      variant: 'default' as const,
+    },
+    {
+      icon: Plus,
+      label: 'New Request',
+      href: '/tenant/complaints/new?type=maintenance_request',
+      variant: 'outline' as const,
+    },
   ];
 
   return (
@@ -128,6 +150,17 @@ export function TenantMobileLayout({ children }: TenantMobileLayoutProps) {
             </div>
           </div>
 
+          {/* Help icon */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push('/tenant/help')}
+            className="h-9 w-9"
+            aria-label="Help"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
+
           {/* Notifications icon */}
           <Button
             variant="ghost"
@@ -147,15 +180,38 @@ export function TenantMobileLayout({ children }: TenantMobileLayoutProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-20 safe-area-inset-bottom">
+      <main className="flex-1 overflow-y-auto pb-32 safe-area-inset-bottom">
         <div className="p-4">{children}</div>
       </main>
+
+      {/* Quick Actions - Floating above bottom nav */}
+      {pathname === '/tenant/dashboard' && (
+        <div className="fixed bottom-20 left-0 right-0 z-30 px-4 safe-area-inset-bottom">
+          <div className="flex gap-2 justify-center">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Button
+                  key={action.href}
+                  variant={action.variant}
+                  size="sm"
+                  onClick={() => router.push(action.href)}
+                  className="flex items-center gap-2 shadow-lg"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-inset-bottom">
         <div className="flex h-16 items-center justify-around px-2">
           {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             const Icon = item.icon;
 
             return (

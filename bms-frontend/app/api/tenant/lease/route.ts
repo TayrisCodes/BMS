@@ -51,8 +51,21 @@ export async function GET() {
     const leaseInfo = {
       startDate: lease.startDate || lease.createdAt,
       endDate: lease.endDate,
-      rentAmount: lease.rentAmount || 0,
+      rentAmount: lease.rentAmount ?? lease.terms?.rent ?? 0,
+      serviceCharges: lease.terms?.serviceCharges ?? 0,
+      deposit: lease.depositAmount ?? lease.terms?.deposit ?? 0,
       status: lease.status || 'active',
+      billingCycle: lease.billingCycle,
+      paymentDueDays:
+        lease.paymentDueDays ??
+        lease.penaltyConfig?.paymentDueDays ??
+        lease.penaltyConfig?.gracePeriodDays ??
+        7,
+      nextInvoiceDate: lease.nextInvoiceDate ?? null,
+      penaltyConfig: lease.penaltyConfig ?? null,
+      customTermsText: lease.customTermsText ?? null,
+      termsTemplateId: lease.termsTemplateId ?? null,
+      termsAccepted: lease.termsAccepted ?? null,
     };
 
     const unitInfo = {
@@ -68,17 +81,18 @@ export async function GET() {
     };
 
     const terms = {
-      deposit: lease.depositAmount || 0,
-      utilitiesIncluded: false, // Can be derived from additionalCharges if needed
-      petsAllowed: false, // Not in current lease model
-      noticePeriod: 30, // Default, can be added to lease model if needed
+      deposit: lease.depositAmount ?? lease.terms?.deposit ?? 0,
+      utilitiesIncluded: false,
+      petsAllowed: false,
+      noticePeriod: 30,
+      customText: lease.customTermsText ?? null,
     };
 
     // Calculate monthly charges from lease data
     const charges = [
       {
         name: 'Rent',
-        amount: lease.rentAmount || 0,
+        amount: lease.rentAmount ?? lease.terms?.rent ?? 0,
         frequency: lease.billingCycle === 'monthly' ? 'Monthly' : 'Yearly',
       },
     ];
@@ -96,10 +110,12 @@ export async function GET() {
 
     return NextResponse.json({
       lease: {
+        id: lease._id,
         leaseInfo,
         unitInfo,
         terms,
         charges,
+        documents: lease.documents ?? [],
       },
     });
   } catch (error) {

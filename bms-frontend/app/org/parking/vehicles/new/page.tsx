@@ -49,7 +49,7 @@ export default function NewVehiclePage() {
   const [make, setMake] = useState<string>('');
   const [model, setModel] = useState<string>('');
   const [color, setColor] = useState<string>('');
-  const [parkingSpaceId, setParkingSpaceId] = useState<string>('');
+  const [parkingSpaceId, setParkingSpaceId] = useState<string>('__none__');
   const [status, setStatus] = useState<VehicleStatus>('active');
 
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function NewVehiclePage() {
         make: make.trim() || null,
         model: model.trim() || null,
         color: color.trim() || null,
-        parkingSpaceId: parkingSpaceId || null,
+        parkingSpaceId: parkingSpaceId === '__none__' ? null : parkingSpaceId,
         status,
       };
 
@@ -231,7 +231,7 @@ export default function NewVehiclePage() {
                     <SelectValue placeholder="Select a parking space (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {parkingSpaces.map((space) => (
                       <SelectItem key={space._id} value={space._id}>
                         {space.spaceNumber}

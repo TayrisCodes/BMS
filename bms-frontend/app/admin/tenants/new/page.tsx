@@ -70,21 +70,21 @@ export default function NewTenantPage() {
         const unitsList = unitsData.units || [];
         setUnits(unitsList);
         setFilteredUnits(unitsList);
-        
+
         // Fetch building names for units
         if (unitsList.length > 0) {
-          const buildingIds = [...new Set(unitsList.map(u => u.buildingId))];
-          const buildingPromises = buildingIds.map(id => 
-            apiGet<{ building: Building }>(`/api/buildings/${id}`).catch(() => null)
+          const buildingIds = [...new Set(unitsList.map((u) => u.buildingId))];
+          const buildingPromises = buildingIds.map((id) =>
+            apiGet<{ building: Building }>(`/api/buildings/${id}`).catch(() => null),
           );
           const buildingResults = await Promise.all(buildingPromises);
           const buildingMap = new Map<string, string>();
           buildingResults.forEach((result, index) => {
-            if (result?.building) {
+            if (result?.building && buildingIds[index]) {
               buildingMap.set(buildingIds[index], result.building.name);
             }
           });
-          const unitsWithBuildings = unitsList.map(u => ({
+          const unitsWithBuildings = unitsList.map((u) => ({
             ...u,
             buildingName: buildingMap.get(u.buildingId) || 'Unknown Building',
           }));
@@ -104,16 +104,17 @@ export default function NewTenantPage() {
 
     // Filter by building
     if (selectedBuildingId) {
-      filtered = filtered.filter(u => u.buildingId === selectedBuildingId);
+      filtered = filtered.filter((u) => u.buildingId === selectedBuildingId);
     }
 
     // Filter by search query
     if (unitSearchQuery) {
       const query = unitSearchQuery.toLowerCase();
-      filtered = filtered.filter(u =>
-        u.unitNumber.toLowerCase().includes(query) ||
-        u.buildingName?.toLowerCase().includes(query) ||
-        u.unitType.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (u) =>
+          u.unitNumber.toLowerCase().includes(query) ||
+          u.buildingName?.toLowerCase().includes(query) ||
+          u.unitType.toLowerCase().includes(query),
       );
     }
 
@@ -122,14 +123,14 @@ export default function NewTenantPage() {
 
   // Set lease start date to today by default
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0] || '';
     setLeaseStartDate(today);
   }, []);
 
   // Update rent amount when unit is selected
   useEffect(() => {
     if (selectedUnitId) {
-      const unit = units.find(u => u._id === selectedUnitId);
+      const unit = units.find((u) => u._id === selectedUnitId);
       if (unit?.rentAmount) {
         setLeaseRentAmount(unit.rentAmount.toString());
       }
@@ -169,14 +170,19 @@ export default function NewTenantPage() {
       language: formData.get('language')?.toString() || null,
       password,
       unitId: createLease && selectedUnitId ? selectedUnitId : null,
-      leaseData: createLease && selectedUnitId ? {
-        startDate: leaseStartDate || new Date().toISOString().split('T')[0],
-        endDate: formData.get('leaseEndDate')?.toString() || null,
-        rentAmount: leaseRentAmount ? parseFloat(leaseRentAmount) : 0,
-        depositAmount: formData.get('depositAmount') ? parseFloat(formData.get('depositAmount')!.toString()) : null,
-        billingCycle: formData.get('billingCycle')?.toString() || 'monthly',
-        dueDay: parseInt(formData.get('dueDay')?.toString() || '1'),
-      } : null,
+      leaseData:
+        createLease && selectedUnitId
+          ? {
+              startDate: leaseStartDate || new Date().toISOString().split('T')[0],
+              endDate: formData.get('leaseEndDate')?.toString() || null,
+              rentAmount: leaseRentAmount ? parseFloat(leaseRentAmount) : 0,
+              depositAmount: formData.get('depositAmount')
+                ? parseFloat(formData.get('depositAmount')!.toString())
+                : null,
+              billingCycle: formData.get('billingCycle')?.toString() || 'monthly',
+              dueDay: parseInt(formData.get('dueDay')?.toString() || '1'),
+            }
+          : null,
       emergencyContact: {
         name: formData.get('emergencyName')?.toString() || '',
         phone: formData.get('emergencyPhone')?.toString() || '',
@@ -367,10 +373,11 @@ export default function NewTenantPage() {
                     <div>
                       <Label htmlFor="buildingFilter">Filter by Building (Optional)</Label>
                       <Select
-                        value={selectedBuildingId}
+                        value={selectedBuildingId || 'all'}
                         onValueChange={(value) => {
-                          setSelectedBuildingId(value);
-                          if (value) {
+                          const buildingId = value === 'all' ? '' : value;
+                          setSelectedBuildingId(buildingId);
+                          if (buildingId) {
                             setSelectedUnitId(''); // Reset unit selection when building changes
                           }
                         }}
@@ -379,7 +386,7 @@ export default function NewTenantPage() {
                           <SelectValue placeholder="All Buildings" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Buildings</SelectItem>
+                          <SelectItem value="all">All Buildings</SelectItem>
                           {buildings.map((building) => (
                             <SelectItem key={building._id} value={building._id}>
                               {building.name}

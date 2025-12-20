@@ -177,7 +177,3 @@ sudo nano /etc/hosts
 - If using custom port, use: `http://acme.localhost:3000`
 - Ensure Next.js is running on the correct port
 
-
-
-
-

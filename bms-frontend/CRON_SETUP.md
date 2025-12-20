@@ -1,177 +1,111 @@
-# Cron Job Setup Guide
+# Automated Monthly Invoice Generation Setup
 
-This document describes how to set up scheduled cron jobs for the BMS notification system.
+## Overview
 
-## Available Cron Jobs
+The system now supports automated monthly invoice generation for all active leases. This can be triggered manually via the UI or automatically via cron jobs.
 
-### 1. Payment Due Reminders
+## Manual Trigger
 
-**Endpoint:** `GET /api/cron/payment-due-reminders`
+1. Navigate to `/org/invoices`
+2. Click the "Generate Monthly" button
+3. The system will:
+   - Generate invoices for all active leases in the current month
+   - Automatically send invoices to tenants via in-app and SMS notifications
+   - Display a summary of results
 
-**Purpose:** Sends payment reminders to tenants for invoices due in 3 days and 1 day.
+## Automated Cron Job
 
-**Schedule:** Daily (recommended: 9:00 AM local time)
+### Vercel Cron (Recommended)
 
-**Example:**
-
-```bash
-# Using curl with cron secret
-curl -X GET "https://your-domain.com/api/cron/payment-due-reminders" \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
-
-### 2. Lease Expiring Reminders
-
-**Endpoint:** `GET /api/cron/lease-expiring-reminders`
-
-**Purpose:** Sends reminders to tenants about leases expiring in 30 days and 7 days.
-
-**Schedule:** Daily (recommended: 9:00 AM local time)
-
-**Example:**
-
-```bash
-# Using curl with cron secret
-curl -X GET "https://your-domain.com/api/cron/lease-expiring-reminders" \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
-
-## Setup Options
-
-### Option 1: Vercel Cron (Recommended for Vercel deployments)
-
-Add to `vercel.json`:
+If deploying on Vercel, the cron job is configured in `vercel.json`:
 
 ```json
 {
   "crons": [
     {
-      "path": "/api/cron/payment-due-reminders",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/lease-expiring-reminders",
-      "schedule": "0 9 * * *"
+      "path": "/api/cron/monthly-invoices",
+      "schedule": "0 0 1 * *"
     }
   ]
 }
 ```
 
-**Note:** Vercel Cron automatically adds the `x-vercel-signature` header. Update the route handlers to verify this header instead of `CRON_SECRET` if using Vercel.
+This runs on the 1st of every month at midnight UTC.
 
-### Option 2: External Cron Service (cron-job.org, EasyCron, etc.)
-
-1. Sign up for a cron service
-2. Create a new cron job
-3. Set the schedule (e.g., daily at 9:00 AM)
-4. Set the URL to your endpoint
-5. Add custom header: `Authorization: Bearer YOUR_CRON_SECRET`
-
-### Option 3: Server Cron (Linux/Unix)
-
-Add to crontab (`crontab -e`):
-
-```bash
-# Payment due reminders - daily at 9:00 AM
-0 9 * * * curl -X GET "https://your-domain.com/api/cron/payment-due-reminders" -H "Authorization: Bearer YOUR_CRON_SECRET"
-
-# Lease expiring reminders - daily at 9:00 AM
-0 9 * * * curl -X GET "https://your-domain.com/api/cron/lease-expiring-reminders" -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
-
-### Option 4: GitHub Actions (for testing/development)
-
-Create `.github/workflows/cron-jobs.yml`:
-
-```yaml
-name: Cron Jobs
-
-on:
-  schedule:
-    - cron: '0 9 * * *' # Daily at 9:00 AM UTC
-  workflow_dispatch: # Allow manual trigger
-
-jobs:
-  payment-reminders:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger payment due reminders
-        run: |
-          curl -X GET "${{ secrets.API_URL }}/api/cron/payment-due-reminders" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-
-  lease-reminders:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger lease expiring reminders
-        run: |
-          curl -X GET "${{ secrets.API_URL }}/api/cron/lease-expiring-reminders" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-```
-
-## Environment Variables
+### Environment Variables
 
 Add to your `.env` file:
 
 ```bash
-# Cron secret for protecting cron endpoints
-CRON_SECRET=your-secure-random-string-here
+# Cron job security
+CRON_SECRET=your-secret-key-here
 ```
 
-**Important:** Generate a strong random secret:
+The cron endpoint requires this secret in the Authorization header:
+
+```
+Authorization: Bearer your-secret-key-here
+```
+
+### External Cron Service
+
+If not using Vercel, you can use any cron service (e.g., cron-job.org, EasyCron) to call:
+
+```
+POST https://yourdomain.com/api/cron/monthly-invoices
+Authorization: Bearer your-secret-key-here
+Content-Type: application/json
+```
+
+### Cron Schedule
+
+Recommended schedule: `0 0 1 * *` (1st of every month at midnight UTC)
+
+You can adjust the schedule in `vercel.json` or your cron service:
+
+- `0 0 1 * *` - 1st of every month
+- `0 0 * * 1` - Every Monday at midnight
+- `0 9 1 * *` - 1st of every month at 9 AM UTC
+
+## API Endpoints
+
+### Manual Trigger (Authenticated)
+
+- **POST** `/api/admin/billing/generate-monthly`
+- Requires: ORG_ADMIN or ACCOUNTANT permission
+- Generates invoices for the current organization only
+
+### Cron Job (Protected by Secret)
+
+- **POST** `/api/cron/monthly-invoices`
+- Requires: `Authorization: Bearer {CRON_SECRET}` header
+- Generates invoices for all active organizations
+
+## Features
+
+- ✅ Generates invoices for all active leases
+- ✅ Handles partial periods (lease starts/ends mid-month)
+- ✅ Prevents duplicate invoices (unless `forceRegenerate` is true)
+- ✅ Automatically sends invoices to tenants
+- ✅ Processes multiple organizations in parallel
+- ✅ Comprehensive error handling and logging
+
+## Testing
+
+To test the cron endpoint manually:
 
 ```bash
-# Generate a secure random secret
-openssl rand -base64 32
+curl -X POST https://yourdomain.com/api/cron/monthly-invoices \
+  -H "Authorization: Bearer your-secret-key-here" \
+  -H "Content-Type: application/json" \
+  -d '{}'
 ```
-
-## Security Considerations
-
-1. **Always use HTTPS** for cron endpoints in production
-2. **Use a strong CRON_SECRET** and never commit it to version control
-3. **Consider IP whitelisting** if your cron service provides static IPs
-4. **Monitor cron job execution** to ensure they're running as expected
-5. **Set up alerts** for failed cron jobs
-
-## Testing Cron Jobs
-
-### Manual Testing
-
-```bash
-# Test payment due reminders
-curl -X GET "http://localhost:3000/api/cron/payment-due-reminders" \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-
-# Test lease expiring reminders
-curl -X GET "http://localhost:3000/api/cron/lease-expiring-reminders" \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
-
-### Without CRON_SECRET (Development)
-
-If `CRON_SECRET` is not set, the endpoints will still work (for development convenience), but this should never be the case in production.
 
 ## Monitoring
 
-Consider adding logging and monitoring:
+Check logs for:
 
-1. Log cron job execution times
-2. Track number of notifications sent
-3. Set up alerts for failures
-4. Monitor notification delivery rates
-
-## Troubleshooting
-
-### Cron job not running
-
-- Check cron service logs
-- Verify CRON_SECRET is correct
-- Ensure endpoint is accessible
-- Check server logs for errors
-
-### Notifications not being sent
-
-- Verify email/WhatsApp credentials are configured
-- Check notification service logs
-- Verify tenant/user contact information is correct
-- Check database for notification records
+- `[Cron] Starting monthly invoice generation...`
+- `[Cron] Monthly invoice generation completed:`
+- `[Scheduled Invoice Generation] Processing organization:`
+- `[Scheduled Invoice Generation] Completed for organization:`

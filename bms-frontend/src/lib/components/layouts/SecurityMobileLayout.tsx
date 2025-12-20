@@ -5,7 +5,16 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/lib/utils';
 import { Button } from '@/lib/components/ui/button';
-import { Users, User, Bell, ChevronLeft } from 'lucide-react';
+import {
+  Users,
+  User,
+  Bell,
+  ChevronLeft,
+  Clock,
+  AlertTriangle,
+  QrCode,
+  ParkingMeter,
+} from 'lucide-react';
 
 interface SecurityMobileLayoutProps {
   children: React.ReactNode;
@@ -21,7 +30,13 @@ export function SecurityMobileLayout({ children }: SecurityMobileLayoutProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Determine if we're on a nested page (need back button)
-  const isNestedPage = pathname !== '/security/visitors' && pathname !== '/security/profile';
+  const isNestedPage =
+    pathname !== '/security/visitors' &&
+    pathname !== '/security/profile' &&
+    pathname !== '/security/shifts' &&
+    pathname !== '/security/incidents' &&
+    pathname !== '/security/qr-scanner' &&
+    pathname !== '/security/parking';
 
   // Fetch user data
   useEffect(() => {
@@ -71,6 +86,10 @@ export function SecurityMobileLayout({ children }: SecurityMobileLayoutProps) {
 
   const navigationItems = [
     { icon: Users, label: 'Visitors', href: '/security/visitors' },
+    { icon: QrCode, label: 'QR Scanner', href: '/security/qr-scanner' },
+    { icon: ParkingMeter, label: 'Parking', href: '/security/parking' },
+    { icon: Clock, label: 'Shifts', href: '/security/shifts' },
+    { icon: AlertTriangle, label: 'Incidents', href: '/security/incidents' },
     { icon: User, label: 'Profile', href: '/security/profile' },
   ];
 

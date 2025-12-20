@@ -1,126 +1,124 @@
-// Service Worker for BMS PWA
-// Caches static assets and API responses for offline support
+// Service Worker for PWA and Push Notifications
+// Enhanced with better caching strategies
 
-const CACHE_NAME = 'bms-v1';
-const STATIC_CACHE_NAME = 'bms-static-v1';
-const API_CACHE_NAME = 'bms-api-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `bms-${CACHE_VERSION}`;
+const STATIC_CACHE = `bms-static-${CACHE_VERSION}`;
+const API_CACHE = `bms-api-${CACHE_VERSION}`;
+const OFFLINE_PAGE = '/offline';
 
-// Assets to cache on install
-const STATIC_ASSETS = [
+// URLs to cache on install
+const urlsToCache = [
   '/',
+  '/tenant',
   '/tenant/dashboard',
-  '/tenant/invoices',
-  '/tenant/payments',
-  '/tenant/complaints',
-  '/tenant/lease',
-  '/manifest.json',
+  OFFLINE_PAGE,
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
-// Install event - cache static assets
+// Install event - cache resources
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log('[SW] Installing service worker...');
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching static assets');
-      return cache.addAll(STATIC_ASSETS).catch((error) => {
-        console.warn('[Service Worker] Failed to cache some assets:', error);
-      });
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('[SW] Caching app shell');
+        return cache.addAll(urlsToCache);
+      }),
+      caches.open(STATIC_CACHE).then((cache) => {
+        console.log('[SW] Static cache ready');
+        return Promise.resolve();
+      }),
+    ]).catch((error) => {
+      console.error('[SW] Install failed:', error);
     }),
   );
-  // Activate immediately
   self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (
-            cacheName !== STATIC_CACHE_NAME &&
-            cacheName !== API_CACHE_NAME &&
-            cacheName !== CACHE_NAME
-          ) {
-            console.log('[Service Worker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        }),
-      );
-    }),
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            // Delete old caches that don't match current version
+            if (
+              cacheName.startsWith('bms-') &&
+              cacheName !== CACHE_NAME &&
+              cacheName !== STATIC_CACHE &&
+              cacheName !== API_CACHE
+            ) {
+              console.log('[SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          }),
+        );
+      })
+      .then(() => {
+        console.log('[SW] Service worker activated');
+        return self.clients.claim();
+      }),
   );
-  // Take control of all clients immediately
-  return self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Helper function to check if request is for static asset
+function isStaticAsset(url) {
+  return (
+    url.match(/\.(jpg|jpeg|png|gif|svg|webp|ico|woff|woff2|ttf|eot|css|js)$/i) ||
+    url.includes('/_next/static/') ||
+    url.includes('/icon-') ||
+    url.includes('/images/')
+  );
+}
+
+// Helper function to check if request is for API
+function isApiRequest(url) {
+  return url.includes('/api/');
+}
+
+// Helper function to check if request is for HTML page
+function isHtmlRequest(url) {
+  return (
+    url.endsWith('/') ||
+    url.endsWith('.html') ||
+    (!url.includes('.') && !isApiRequest(url) && !isStaticAsset(url))
+  );
+}
+
+// Fetch event - implement different caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
 
   // Skip cross-origin requests
   if (url.origin !== location.origin) {
     return;
   }
 
-  // Handle API requests
-  if (url.pathname.startsWith('/api/')) {
+  // Strategy 1: Cache-first for static assets (images, fonts, CSS, JS)
+  if (isStaticAsset(url.href)) {
     event.respondWith(
-      caches.open(API_CACHE_NAME).then((cache) => {
+      caches.open(STATIC_CACHE).then((cache) => {
         return cache.match(request).then((cachedResponse) => {
-          // Return cached response if available and not too old (5 minutes)
           if (cachedResponse) {
-            const cachedDate = cachedResponse.headers.get('sw-cached-date');
-            if (cachedDate) {
-              const cacheAge = Date.now() - parseInt(cachedDate, 10);
-              if (cacheAge < 5 * 60 * 1000) {
-                // Less than 5 minutes old
-                return cachedResponse;
-              }
-            }
+            return cachedResponse;
           }
-
-          // Fetch from network
           return fetch(request)
             .then((response) => {
-              // Clone response for caching
-              const responseToCache = response.clone();
-
-              // Add cache date header
-              const headers = new Headers(responseToCache.headers);
-              headers.set('sw-cached-date', Date.now().toString());
-
-              const modifiedResponse = new Response(responseToCache.body, {
-                status: responseToCache.status,
-                statusText: responseToCache.statusText,
-                headers: headers,
-              });
-
               // Cache successful responses
               if (response.status === 200) {
-                cache.put(request, modifiedResponse);
+                cache.put(request, response.clone());
               }
               return response;
             })
             .catch(() => {
-              // If network fails and we have cached response, use it
-              if (cachedResponse) {
-                return cachedResponse;
-              }
-              // Return offline fallback for API requests
-              return new Response(
-                JSON.stringify({ error: 'Offline', message: 'No internet connection' }),
-                {
-                  status: 503,
-                  headers: { 'Content-Type': 'application/json' },
-                },
-              );
+              // Return cached version even if stale
+              return cachedResponse;
             });
         });
       }),
@@ -128,68 +126,165 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle static assets (HTML, CSS, JS, images)
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(request)
+  // Strategy 2: Network-first with cache fallback for API calls
+  if (isApiRequest(url.href)) {
+    event.respondWith(
+      fetch(request)
         .then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
+          // Cache successful API responses (with short TTL)
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(API_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
           }
-
-          // Clone response for caching
-          const responseToCache = response.clone();
-
-          caches.open(STATIC_CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
-          });
-
           return response;
         })
         .catch(() => {
-          // Offline fallback - return a basic offline page for navigation requests
-          if (request.headers.get('accept').includes('text/html')) {
-            return caches.match('/offline.html').then((offlinePage) => {
-              return offlinePage || new Response('Offline', { status: 503 });
+          // Fallback to cache if network fails
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return offline response for API calls
+            return new Response(
+              JSON.stringify({ error: 'Offline', message: 'No internet connection' }),
+              {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' },
+              },
+            );
+          });
+        }),
+    );
+    return;
+  }
+
+  // Strategy 3: Stale-while-revalidate for HTML pages
+  if (isHtmlRequest(url.href)) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          // Fetch fresh content in background
+          const fetchPromise = fetch(request)
+            .then((response) => {
+              if (response.status === 200) {
+                cache.put(request, response.clone());
+              }
+              return response;
+            })
+            .catch(() => {
+              // If fetch fails and we have cached version, return it
+              if (cachedResponse) {
+                return cachedResponse;
+              }
+              // Otherwise, return offline page
+              return caches.match(OFFLINE_PAGE);
             });
-          }
+
+          // Return cached version immediately if available, otherwise wait for network
+          return cachedResponse || fetchPromise;
         });
+      }),
+    );
+    return;
+  }
+
+  // Default: Network-first with cache fallback
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Fallback to offline page for navigation requests
+          if (request.mode === 'navigate') {
+            return caches.match(OFFLINE_PAGE);
+          }
+          return new Response('Offline', { status: 503 });
+        });
+      }),
+  );
+});
+
+// Push event - handle push notifications
+self.addEventListener('push', (event) => {
+  let notificationData = {
+    title: 'BMS Notification',
+    body: 'You have a new notification',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: 'bms-notification',
+    data: {},
+  };
+
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        tag: data.tag || notificationData.tag,
+        data: data.data || notificationData.data,
+        requireInteraction: data.requireInteraction || false,
+        silent: data.silent || false,
+      };
+    } catch (error) {
+      console.error('[SW] Failed to parse push notification data:', error);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      data: notificationData.data,
+      requireInteraction: notificationData.requireInteraction,
+      silent: notificationData.silent,
+      vibrate: [200, 100, 200],
     }),
   );
 });
 
-// Background sync for offline actions (if supported)
-self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
+// Notification click event - open app when notification is clicked
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
 
-  if (event.tag === 'sync-complaints') {
-    event.waitUntil(syncComplaints());
-  } else if (event.tag === 'sync-payments') {
-    event.waitUntil(syncPayments());
-  }
-});
+  const data = event.notification.data || {};
+  const urlToOpen = data.url || '/tenant/dashboard';
 
-// Sync queued complaints
-async function syncComplaints() {
-  // This would sync queued complaints from IndexedDB
-  // For MVP, this is a placeholder
-  console.log('[Service Worker] Syncing complaints...');
-}
-
-// Sync queued payments
-async function syncPayments() {
-  // This would sync queued payment intents from IndexedDB
-  // For MVP, this is a placeholder
-  console.log('[Service Worker] Syncing payments...');
-}
-
-// Push notifications (for future use)
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received');
-  // Handle push notifications here
+  event.waitUntil(
+    clients
+      .matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+      .then((clientList) => {
+        // Check if there's already a window/tab open with the target URL
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(urlToOpen) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If not, open a new window/tab
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      }),
+  );
 });

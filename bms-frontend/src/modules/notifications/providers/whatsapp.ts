@@ -255,4 +255,29 @@ export class WhatsAppProvider {
       `Thank you,\nBMS System`
     );
   }
+
+  /**
+   * Generate WhatsApp message template for visitor arrived notification.
+   */
+  generateVisitorArrivedMessage(
+    visitorName: string,
+    visitorPhone: string | null,
+    buildingName: string,
+    unitNumber: string | null,
+    floor: number | null,
+    entryTime: Date,
+  ): string {
+    const unitInfo = unitNumber ? `Unit ${unitNumber}${floor ? `, Floor ${floor}` : ''}` : '';
+    const visitorInfo = visitorPhone ? `${visitorName} (${visitorPhone})` : visitorName;
+
+    return (
+      `🚪 Visitor Arrived\n\n` +
+      `Visitor: ${visitorInfo}\n` +
+      `Building: ${buildingName}\n` +
+      (unitInfo ? `Unit: ${unitInfo}\n` : '') +
+      `Entry Time: ${entryTime.toLocaleString()}\n\n` +
+      `Please check your tenant portal for more details.\n\n` +
+      `Thank you,\nBMS System`
+    );
+  }
 }

@@ -3,7 +3,7 @@
  * Complete data seeding script for MongoDB Atlas
  * Creates tenant, building, units, lease, and integrates with org admin and building manager
  * Usage: MONGODB_URI="your-connection-string" tsx scripts/seed-complete-data.ts
- * 
+ *
  * REQUIRED: MONGODB_URI environment variable must be set
  */
 

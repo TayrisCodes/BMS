@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Header from './components/Header';
 import { ThemeProvider } from '@/lib/components/providers/ThemeProvider';
+import { KeyboardShortcutsProvider } from '@/lib/components/providers/KeyboardShortcutsProvider';
+import { SkipLink } from '@/lib/components/ui/skip-link';
+import { Toaster } from '@/lib/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'BMS - Building Management System',
@@ -44,11 +47,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="BMS" />
+        {/* Performance optimizations */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="preload" href="/icon-192.png" as="image" />
       </head>
       <body>
         <ThemeProvider>
-          <Header />
-          {children}
+          <KeyboardShortcutsProvider>
+            <SkipLink />
+            <Header />
+            <main id="main-content">{children}</main>
+            <Toaster />
+          </KeyboardShortcutsProvider>
         </ThemeProvider>
       </body>
     </html>

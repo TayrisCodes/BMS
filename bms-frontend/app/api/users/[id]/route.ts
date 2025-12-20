@@ -102,7 +102,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Users can update their own profile (name, email, phone)
     // Only ORG_ADMIN/SUPER_ADMIN can update other users
     const isOwnProfile = context.userId === userId;
-    const canUpdateOthers = isSuperAdmin(context) || context.roles.includes('ORG_ADMIN');
+    const isOrgAdmin = context.roles.includes('ORG_ADMIN');
+    const canUpdateOthers = isSuperAdmin(context) || isOrgAdmin;
+
+    // ORG_ADMIN cannot edit other ORG_ADMIN or SUPER_ADMIN users
+    if (!isSuperAdmin(context) && !isOwnProfile) {
+      const hasRestrictedRole =
+        existingUser.roles.includes('ORG_ADMIN') || existingUser.roles.includes('SUPER_ADMIN');
+      if (hasRestrictedRole) {
+        return NextResponse.json(
+          {
+            error:
+              'You cannot edit users with ORG_ADMIN or SUPER_ADMIN roles. You can only edit your own account.',
+          },
+          { status: 403 },
+        );
+      }
+    }
 
     // Check if trying to update roles or status
     const updatingRoles = body.roles !== undefined;
@@ -121,6 +137,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // For other fields, check permissions
     if (!isOwnProfile && !canUpdateOthers) {
       requirePermission(context, 'users', 'update');
+    }
+
+    // Validate role restrictions for ORG_ADMIN
+    if (updatingRoles && !isSuperAdmin(context) && isOrgAdmin) {
+      const restrictedRoles: UserRole[] = ['ORG_ADMIN', 'SUPER_ADMIN', 'TENANT'];
+      const hasRestrictedRole = body.roles!.some((role) => restrictedRoles.includes(role));
+
+      if (hasRestrictedRole) {
+        return NextResponse.json(
+          {
+            error:
+              'You cannot assign ORG_ADMIN, SUPER_ADMIN, or TENANT roles. TENANT accounts must be created through the tenants page.',
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // Validate: can't change organizationId unless SUPER_ADMIN
@@ -263,6 +295,23 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Verify user belongs to same org (unless SUPER_ADMIN)
     if (!isSuperAdmin(context)) {
       validateOrganizationAccess(context, existingUser.organizationId);
+    }
+
+    // ORG_ADMIN cannot delete other ORG_ADMIN or SUPER_ADMIN users
+    if (!isSuperAdmin(context)) {
+      const isOrgAdmin = context.roles.includes('ORG_ADMIN');
+      if (isOrgAdmin) {
+        const hasRestrictedRole =
+          existingUser.roles.includes('ORG_ADMIN') || existingUser.roles.includes('SUPER_ADMIN');
+        if (hasRestrictedRole) {
+          return NextResponse.json(
+            {
+              error: 'You cannot delete users with ORG_ADMIN or SUPER_ADMIN roles.',
+            },
+            { status: 403 },
+          );
+        }
+      }
     }
 
     const deleted = await deleteUser(userId, isSuperAdmin(context));

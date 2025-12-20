@@ -3,7 +3,7 @@
  * Seed script for MongoDB Atlas
  * This script seeds initial data to the MongoDB Atlas database
  * Usage: MONGODB_URI="your-connection-string" tsx scripts/seed-atlas.ts
- * 
+ *
  * REQUIRED: MONGODB_URI environment variable must be set
  */
 

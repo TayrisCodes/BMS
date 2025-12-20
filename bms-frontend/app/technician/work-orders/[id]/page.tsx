@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/lib/components/ui/button';
 import { Badge } from '@/lib/components/ui/badge';
@@ -26,6 +27,9 @@ import {
   AlertCircle,
   Image as ImageIcon,
   Play,
+  Phone,
+  Mail,
+  User,
 } from 'lucide-react';
 import type {
   WorkOrderStatus,
@@ -41,13 +45,26 @@ interface WorkOrder {
   priority: WorkOrderPriority;
   status: WorkOrderStatus;
   buildingId: string;
+  unitId?: string | null;
+  assetId?: string | null;
+  createdBy?: string;
   estimatedCost?: number | null;
   actualCost?: number | null;
+  startedAt?: Date | string | null;
   completedAt?: Date | string | null;
+  scheduledDate?: Date | string | null;
   notes?: string | null;
   photos?: string[] | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+}
+
+interface ContactUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone: string;
+  roles: string[];
 }
 
 const STATUS_COLORS: Record<WorkOrderStatus, string> = {
@@ -72,11 +89,18 @@ export default function TechnicianWorkOrderDetailPage() {
 
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [building, setBuilding] = useState<{ name: string } | null>(null);
+  const [requester, setRequester] = useState<ContactUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [actualCost, setActualCost] = useState('');
+  const [asset, setAsset] = useState<{
+    name: string;
+    assetType: string;
+    serialNumber?: string;
+  } | null>(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   const fetchWorkOrder = useCallback(async () => {
     try {
@@ -102,6 +126,30 @@ export default function TechnicianWorkOrderDetailPage() {
           setBuilding(buildingData.building || buildingData);
         }
       }
+
+      // Fetch requester info (createdBy)
+      if (fetchedWorkOrder.createdBy) {
+        const userRes = await fetch(`/api/users/${fetchedWorkOrder.createdBy}`);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setRequester({
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+            roles: userData.roles || [],
+          });
+        }
+      }
+
+      // Fetch asset info if linked
+      if (fetchedWorkOrder.assetId) {
+        const assetRes = await fetch(`/api/assets/${fetchedWorkOrder.assetId}`);
+        if (assetRes.ok) {
+          const assetData = await assetRes.json();
+          setAsset(assetData.asset || assetData);
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch work order:', err);
       setError(err instanceof Error ? err.message : 'Failed to load work order');
@@ -113,37 +161,6 @@ export default function TechnicianWorkOrderDetailPage() {
   useEffect(() => {
     fetchWorkOrder();
   }, [fetchWorkOrder]);
-
-  const handleStartWork = async () => {
-    try {
-      setSaving(true);
-      setError(null);
-
-      const response = await fetch(`/api/work-orders/${workOrderId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'in_progress',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start work');
-      }
-
-      const data = await response.json();
-      setWorkOrder(data.workOrder);
-      router.refresh();
-    } catch (err) {
-      console.error('Failed to start work:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start work');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleUpdateNotes = async () => {
     try {
@@ -172,6 +189,71 @@ export default function TechnicianWorkOrderDetailPage() {
       setError(err instanceof Error ? err.message : 'Failed to update notes');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleStartWork = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'in_progress',
+          startedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start work');
+      }
+
+      const data = await response.json();
+      setWorkOrder(data.workOrder);
+    } catch (err) {
+      console.error('Failed to start work:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start work');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploadingPhotos(true);
+      setError(null);
+
+      const formData = new FormData();
+      Array.from(files).forEach((file) => {
+        formData.append('photos', file);
+      });
+
+      const response = await fetch(`/api/work-orders/${workOrderId}/photos`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload photos');
+      }
+
+      const data = await response.json();
+      // Refresh work order to get updated photos
+      await fetchWorkOrder();
+    } catch (err) {
+      console.error('Failed to upload photos:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload photos');
+    } finally {
+      setUploadingPhotos(false);
     }
   };
 
@@ -292,6 +374,40 @@ export default function TechnicianWorkOrderDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Requester / Contact */}
+      {requester && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Requester / Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="font-medium">
+              {requester.name || requester.email || requester.phone}
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+              {requester.roles?.map((r) => (
+                <Badge key={r} variant="outline">
+                  {r.replace(/_/g, ' ')}
+                </Badge>
+              ))}
+            </div>
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                {requester.phone || 'N/A'}
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                {requester.email || 'N/A'}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Building Info */}
       {building && (
         <Card>
@@ -303,6 +419,80 @@ export default function TechnicianWorkOrderDetailPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm">{building.name}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Asset Info */}
+      {asset && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Asset
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="font-medium">{asset.name}</div>
+            <div className="text-sm text-muted-foreground">
+              <div>Type: {asset.assetType}</div>
+              {asset.serialNumber && <div>Serial: {asset.serialNumber}</div>}
+            </div>
+            <Link href={`/org/assets/${workOrder.assetId}`}>
+              <Button variant="outline" size="sm">
+                View Asset Details
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Time Tracking */}
+      {(workOrder.startedAt || workOrder.scheduledDate) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Time Tracking
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {workOrder.scheduledDate && (
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Scheduled:</span>
+                <span className="text-sm">{formatDate(workOrder.scheduledDate)}</span>
+              </div>
+            )}
+            {workOrder.startedAt && (
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Started:</span>
+                <span className="text-sm">{formatDate(workOrder.startedAt)}</span>
+              </div>
+            )}
+            {workOrder.startedAt && workOrder.completedAt && (
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Duration:</span>
+                <span className="text-sm">
+                  {Math.round(
+                    (new Date(workOrder.completedAt).getTime() -
+                      new Date(workOrder.startedAt).getTime()) /
+                      (1000 * 60),
+                  )}{' '}
+                  minutes
+                </span>
+              </div>
+            )}
+            {workOrder.startedAt && !workOrder.completedAt && (
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Elapsed:</span>
+                <span className="text-sm">
+                  {Math.round(
+                    (new Date().getTime() - new Date(workOrder.startedAt).getTime()) / (1000 * 60),
+                  )}{' '}
+                  minutes
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -345,15 +535,33 @@ export default function TechnicianWorkOrderDetailPage() {
       </Card>
 
       {/* Photos */}
-      {workOrder.photos && workOrder.photos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ImageIcon className="h-5 w-5" />
-              Photos ({workOrder.photos.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Photos{' '}
+            {workOrder.photos && workOrder.photos.length > 0 && `(${workOrder.photos.length})`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {workOrder.status !== 'completed' && workOrder.status !== 'cancelled' && (
+            <div>
+              <Label htmlFor="photoUpload">Upload Photos</Label>
+              <Input
+                id="photoUpload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePhotoUpload}
+                disabled={uploadingPhotos}
+                className="mt-1"
+              />
+              {uploadingPhotos && (
+                <p className="text-sm text-muted-foreground mt-1">Uploading photos...</p>
+              )}
+            </div>
+          )}
+          {workOrder.photos && workOrder.photos.length > 0 && (
             <div className="grid grid-cols-2 gap-3">
               {workOrder.photos.map((photo, index) => (
                 <div
@@ -370,9 +578,9 @@ export default function TechnicianWorkOrderDetailPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Actions */}
       {workOrder.status !== 'completed' && workOrder.status !== 'cancelled' && (
@@ -382,11 +590,23 @@ export default function TechnicianWorkOrderDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Start Work Button */}
-            {(workOrder.status === 'open' || workOrder.status === 'assigned') && (
-              <Button onClick={handleStartWork} disabled={saving} className="w-full" size="lg">
-                <Play className="h-5 w-5 mr-2" />
-                Start Work
-              </Button>
+            {!workOrder.startedAt &&
+              (workOrder.status === 'open' || workOrder.status === 'assigned') && (
+                <Button onClick={handleStartWork} disabled={saving} className="w-full" size="lg">
+                  <Play className="h-5 w-5 mr-2" />
+                  Start Work
+                </Button>
+              )}
+            {workOrder.startedAt && workOrder.status === 'in_progress' && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">Work in progress</span>
+                </div>
+                <p className="text-muted-foreground mt-1">
+                  Started: {formatDate(workOrder.startedAt)}
+                </p>
+              </div>
             )}
 
             {/* Actual Cost Input */}

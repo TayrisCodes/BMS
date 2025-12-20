@@ -79,7 +79,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await logActivitySafe({
       userId: userId,
       organizationId: existingUser.organizationId,
-      action: 'password_reset_by_admin',
+      action: 'password_changed' as any,
       details: {
         resetBy: context.userId,
         resetByRole: isSuperAdmin(context) ? 'SUPER_ADMIN' : 'ORG_ADMIN',
@@ -103,4 +103,3 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 });
   }
 }
-

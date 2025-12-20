@@ -14,6 +14,8 @@ import {
 } from '@/lib/invoices/invoices';
 import { findBuildingById } from '@/lib/buildings/buildings';
 import { generateInvoiceForLease } from '@/modules/billing/invoice-generation';
+import { verifyTenantPaymentStatus } from '@/lib/invoices/payment-verification';
+import { findLeaseById } from '@/lib/leases/leases';
 
 /**
  * GET /api/invoices
@@ -192,6 +194,28 @@ export async function POST(request: Request) {
     // If leaseId is provided and items are not provided, use invoice generation logic
     if (body.leaseId && (!body.items || body.items.length === 0)) {
       try {
+        // Get lease to find tenantId for payment verification
+        const lease = await findLeaseById(body.leaseId, organizationId);
+        if (!lease) {
+          return NextResponse.json({ error: 'Lease not found' }, { status: 404 });
+        }
+
+        // Verify tenant payment status before generating invoice
+        let paymentVerification = null;
+        try {
+          paymentVerification = await verifyTenantPaymentStatus(lease.tenantId, organizationId);
+          // Log verification results (warnings don't block generation)
+          if (paymentVerification.warnings.length > 0) {
+            console.log('[Invoice Generation] Payment verification warnings:', {
+              tenantId: lease.tenantId,
+              warnings: paymentVerification.warnings,
+            });
+          }
+        } catch (verifyError) {
+          // Don't fail invoice generation if verification fails
+          console.error('[Invoice Generation] Payment verification error:', verifyError);
+        }
+
         // Generate invoice using invoice generation service
         const invoice = await generateInvoiceForLease(
           body.leaseId,
@@ -213,70 +237,174 @@ export async function POST(request: Request) {
           }
           const updatedInvoice = await updateInvoice(invoice._id, updates);
           if (updatedInvoice) {
-            return NextResponse.json(
-              {
-                message: 'Invoice generated successfully',
-                invoice: {
-                  _id: updatedInvoice._id,
-                  leaseId: updatedInvoice.leaseId,
-                  tenantId: updatedInvoice.tenantId,
-                  unitId: updatedInvoice.unitId,
-                  invoiceNumber: updatedInvoice.invoiceNumber,
-                  issueDate: updatedInvoice.issueDate,
-                  dueDate: updatedInvoice.dueDate,
-                  periodStart: updatedInvoice.periodStart,
-                  periodEnd: updatedInvoice.periodEnd,
-                  items: updatedInvoice.items,
-                  subtotal: updatedInvoice.subtotal,
-                  tax: updatedInvoice.tax,
-                  total: updatedInvoice.total,
-                  status: updatedInvoice.status,
-                  paidAt: updatedInvoice.paidAt,
-                  notes: updatedInvoice.notes,
-                  createdAt: updatedInvoice.createdAt,
-                  updatedAt: updatedInvoice.updatedAt,
-                },
-              },
-              { status: 201 },
-            );
+            // Automatically send invoice to tenant via SMS and in-app notification
+            let updateSendResult = null;
+            try {
+              const { sendInvoiceToTenant } = await import(
+                '@/modules/notifications/invoice-sender'
+              );
+              updateSendResult = await sendInvoiceToTenant({
+                invoiceId: updatedInvoice._id.toString(),
+                organizationId,
+                tenantId: updatedInvoice.tenantId,
+                channels: ['in_app', 'sms'],
+              });
+            } catch (sendError) {
+              console.error('[Invoices] Failed to send invoice to tenant:', sendError);
+            }
+
+            // Build response with payment verification warnings and send status if available
+            const updateResponse: {
+              message: string;
+              invoice: typeof updatedInvoice;
+              paymentVerification?: {
+                warnings: string[];
+                hasUnpaidInvoices: boolean;
+                hasOverdueInvoices: boolean;
+                previousMonthPaid: boolean;
+              };
+              sent?: {
+                success: boolean;
+                channels: {
+                  in_app?: { sent: boolean };
+                  sms?: { sent: boolean; delivered: boolean };
+                };
+                errors?: string[];
+              };
+            } = {
+              message: 'Invoice generated successfully',
+              invoice: updatedInvoice,
+            };
+
+            // Include payment verification warnings if available
+            if (paymentVerification && paymentVerification.warnings.length > 0) {
+              updateResponse.paymentVerification = {
+                warnings: paymentVerification.warnings,
+                hasUnpaidInvoices: paymentVerification.hasUnpaidInvoices,
+                hasOverdueInvoices: paymentVerification.hasOverdueInvoices,
+                previousMonthPaid: paymentVerification.previousMonthPaid,
+              };
+            }
+
+            // Include send status if available
+            if (updateSendResult) {
+              const channels: {
+                in_app?: { sent: boolean };
+                sms?: { sent: boolean; delivered: boolean };
+              } = {};
+              if (updateSendResult.channels.in_app) {
+                channels.in_app = { sent: updateSendResult.channels.in_app.sent };
+              }
+              if (updateSendResult.channels.sms) {
+                channels.sms = {
+                  sent: updateSendResult.channels.sms.sent,
+                  delivered: updateSendResult.channels.sms.delivered,
+                };
+              }
+              updateResponse.sent = {
+                success: updateSendResult.success,
+                channels,
+                ...(updateSendResult.errors && { errors: updateSendResult.errors }),
+              };
+            }
+
+            return NextResponse.json(updateResponse, { status: 201 });
           }
         }
 
-        // Trigger notification for invoice creation
+        // Automatically send invoice to tenant via SMS and in-app notification
+        let sendResult = null;
         try {
-          const { notifyInvoiceCreated } = await import('@/modules/notifications/events');
-          await notifyInvoiceCreated(invoice._id.toString(), organizationId, invoice.tenantId);
-        } catch (notifError) {
-          console.error('[Invoices] Failed to send invoice creation notification:', notifError);
-          // Don't fail the request if notification fails
+          const { sendInvoiceToTenant } = await import('@/modules/notifications/invoice-sender');
+          sendResult = await sendInvoiceToTenant({
+            invoiceId: invoice._id.toString(),
+            organizationId,
+            tenantId: invoice.tenantId,
+            channels: ['in_app', 'sms'], // Auto-send via in-app and SMS
+          });
+
+          if (!sendResult.success) {
+            console.warn('[Invoices] Invoice sent but some channels failed:', sendResult.errors);
+          } else {
+            console.log('[Invoices] Invoice sent successfully via all channels');
+          }
+        } catch (sendError) {
+          console.error('[Invoices] Failed to send invoice to tenant:', sendError);
+          // Don't fail the request if sending fails - invoice is still created
         }
 
-        return NextResponse.json(
-          {
-            message: 'Invoice generated successfully',
-            invoice: {
-              _id: invoice._id,
-              leaseId: invoice.leaseId,
-              tenantId: invoice.tenantId,
-              unitId: invoice.unitId,
-              invoiceNumber: invoice.invoiceNumber,
-              issueDate: invoice.issueDate,
-              dueDate: invoice.dueDate,
-              periodStart: invoice.periodStart,
-              periodEnd: invoice.periodEnd,
-              items: invoice.items,
-              subtotal: invoice.subtotal,
-              tax: invoice.tax,
-              total: invoice.total,
-              status: invoice.status,
-              paidAt: invoice.paidAt,
-              notes: invoice.notes,
-              createdAt: invoice.createdAt,
-              updatedAt: invoice.updatedAt,
-            },
+        // Build response with payment verification warnings and send status if available
+        const response: {
+          message: string;
+          invoice: typeof invoice;
+          paymentVerification?: {
+            warnings: string[];
+            hasUnpaidInvoices: boolean;
+            hasOverdueInvoices: boolean;
+            previousMonthPaid: boolean;
+          };
+          sent?: {
+            success: boolean;
+            channels: {
+              in_app?: { sent: boolean };
+              sms?: { sent: boolean; delivered: boolean };
+            };
+            errors?: string[];
+          };
+        } = {
+          message: 'Invoice generated successfully',
+          invoice: {
+            _id: invoice._id,
+            leaseId: invoice.leaseId,
+            tenantId: invoice.tenantId,
+            unitId: invoice.unitId,
+            invoiceNumber: invoice.invoiceNumber,
+            issueDate: invoice.issueDate,
+            dueDate: invoice.dueDate,
+            periodStart: invoice.periodStart,
+            periodEnd: invoice.periodEnd,
+            items: invoice.items,
+            subtotal: invoice.subtotal,
+            tax: invoice.tax,
+            total: invoice.total,
+            status: invoice.status,
+            paidAt: invoice.paidAt,
+            notes: invoice.notes,
+            createdAt: invoice.createdAt,
+            updatedAt: invoice.updatedAt,
           },
-          { status: 201 },
-        );
+        };
+
+        // Include payment verification warnings if available
+        if (paymentVerification && paymentVerification.warnings.length > 0) {
+          response.paymentVerification = {
+            warnings: paymentVerification.warnings,
+            hasUnpaidInvoices: paymentVerification.hasUnpaidInvoices,
+            hasOverdueInvoices: paymentVerification.hasOverdueInvoices,
+            previousMonthPaid: paymentVerification.previousMonthPaid,
+          };
+        }
+
+        // Include send status if available
+        if (sendResult) {
+          response.sent = {
+            success: sendResult.success,
+            channels: {
+              in_app: sendResult.channels.in_app
+                ? { sent: sendResult.channels.in_app.sent }
+                : undefined,
+              sms: sendResult.channels.sms
+                ? {
+                    sent: sendResult.channels.sms.sent,
+                    delivered: sendResult.channels.sms.delivered,
+                  }
+                : undefined,
+            },
+            errors: sendResult.errors,
+          };
+        }
+
+        return NextResponse.json(response, { status: 201 });
       } catch (error) {
         if (error instanceof Error) {
           if (error.message.includes('Lease not found')) {

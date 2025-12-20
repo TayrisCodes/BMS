@@ -11,10 +11,14 @@ export type NotificationType =
   | 'work_order_assigned'
   | 'work_order_completed'
   | 'lease_expiring'
+  | 'visitor_arrived'
+  | 'message_received'
+  | 'conversation_archived'
+  | 'conversation_closed'
   | 'system'
   | 'other';
 
-export type NotificationChannel = 'in_app' | 'email' | 'sms';
+export type NotificationChannel = 'in_app' | 'email' | 'sms' | 'push';
 
 export interface NotificationDeliveryStatus {
   in_app?: {
@@ -28,6 +32,11 @@ export interface NotificationDeliveryStatus {
     error?: string | null;
   };
   sms?: {
+    sent: boolean;
+    delivered: boolean;
+    error?: string | null;
+  };
+  push?: {
     sent: boolean;
     delivered: boolean;
     error?: string | null;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardPage } from '@/lib/components/dashboard/DashboardPage';
@@ -22,6 +22,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/lib/components/ui/card';
+import {
+  SearchableSelect,
+  type SearchableSelectOption,
+} from '@/lib/components/ui/searchable-select';
 import { ArrowLeft, Wrench, Building2, AlertCircle } from 'lucide-react';
 import type { WorkOrderCategory, WorkOrderPriority } from '@/lib/work-orders/work-orders';
 
@@ -34,6 +38,15 @@ interface Unit {
   _id: string;
   unitNumber: string;
   buildingId: string;
+  floor?: number | null;
+  unitType?: string | null;
+}
+
+interface Technician {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone: string;
 }
 
 interface Complaint {
@@ -55,18 +68,25 @@ export default function NewWorkOrderPage() {
   const [error, setError] = useState<string | null>(null);
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [complaint, setComplaint] = useState<Complaint | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Form state
   const [buildingId, setBuildingId] = useState<string>('');
-  const [unitId, setUnitId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string | undefined>(undefined);
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [category, setCategory] = useState<WorkOrderCategory>('other');
   const [priority, setPriority] = useState<WorkOrderPriority>('medium');
   const [estimatedCost, setEstimatedCost] = useState<string>('');
-  const [assignedTo, setAssignedTo] = useState<string>('');
+  const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
+
+  // Search states
+  const [unitSearch, setUnitSearch] = useState<string>('');
+  const [technicianSearch, setTechnicianSearch] = useState<string>('');
+  const [loadingUnits, setLoadingUnits] = useState(false);
+  const [loadingTechnicians, setLoadingTechnicians] = useState(false);
 
   const fetchComplaint = useCallback(async () => {
     try {
@@ -95,11 +115,33 @@ export default function NewWorkOrderPage() {
 
   useEffect(() => {
     if (buildingId) {
-      fetchUnits(buildingId);
+      fetchUnits(buildingId, unitSearch);
     } else {
       setUnits([]);
     }
   }, [buildingId]);
+
+  // Fetch technicians on mount
+  useEffect(() => {
+    fetchTechnicians(technicianSearch);
+  }, []);
+
+  // Debounced search for units
+  useEffect(() => {
+    if (!buildingId) return;
+    const timer = setTimeout(() => {
+      fetchUnits(buildingId, unitSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [unitSearch, buildingId]);
+
+  // Debounced search for technicians
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTechnicians(technicianSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [technicianSearch]);
 
   useEffect(() => {
     if (complaint) {
@@ -113,6 +155,8 @@ export default function NewWorkOrderPage() {
       }
       if (complaint.unitId) {
         setUnitId(complaint.unitId);
+      } else {
+        setUnitId(undefined);
       }
     }
   }, [complaint]);
@@ -129,15 +173,41 @@ export default function NewWorkOrderPage() {
     }
   };
 
-  const fetchUnits = async (bId: string) => {
+  const fetchUnits = async (bId: string, search?: string) => {
     try {
-      const response = await fetch(`/api/units?buildingId=${bId}&status=available`);
+      setLoadingUnits(true);
+      let url = `/api/units?buildingId=${bId}`;
+      if (search && search.trim()) {
+        url += `&search=${encodeURIComponent(search.trim())}`;
+      }
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setUnits(data.units || []);
       }
     } catch (err) {
       console.error('Failed to fetch units:', err);
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
+
+  const fetchTechnicians = async (search?: string) => {
+    try {
+      setLoadingTechnicians(true);
+      let url = '/api/users?role=TECHNICIAN&status=active&limit=100';
+      if (search && search.trim()) {
+        url += `&search=${encodeURIComponent(search.trim())}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setTechnicians(data.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch technicians:', err);
+    } finally {
+      setLoadingTechnicians(false);
     }
   };
 
@@ -197,6 +267,29 @@ export default function NewWorkOrderPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Memoize options for SearchableSelect components
+  const unitOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      units.map((unit) => ({
+        value: unit._id,
+        label: unit.unitNumber,
+        description: unit.floor
+          ? `Floor ${unit.floor}${unit.unitType ? ` • ${unit.unitType}` : ''}`
+          : unit.unitType || undefined,
+      })),
+    [units],
+  );
+
+  const technicianOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      technicians.map((tech) => ({
+        value: tech.id,
+        label: tech.name || tech.email || tech.phone,
+        description: tech.email ? `${tech.phone}${tech.name ? ` • ${tech.name}` : ''}` : tech.phone,
+      })),
+    [technicians],
+  );
 
   if (loading) {
     return (
@@ -278,19 +371,17 @@ export default function NewWorkOrderPage() {
               {buildingId && (
                 <div className="space-y-2">
                   <Label htmlFor="unitId">Unit (Optional)</Label>
-                  <Select value={unitId} onValueChange={setUnitId}>
-                    <SelectTrigger id="unitId">
-                      <SelectValue placeholder="Select a unit (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {units.map((unit) => (
-                        <SelectItem key={unit._id} value={unit._id}>
-                          {unit.unitNumber}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    options={unitOptions}
+                    value={unitId}
+                    onValueChange={setUnitId}
+                    placeholder="Select a unit (optional)"
+                    searchPlaceholder="Search units..."
+                    emptyMessage="No units found"
+                    allowClear
+                    loading={loadingUnits}
+                    onSearchChange={setUnitSearch}
+                  />
                 </div>
               )}
 
@@ -386,11 +477,16 @@ export default function NewWorkOrderPage() {
               {/* Assigned To (Optional - can be assigned later) */}
               <div className="space-y-2">
                 <Label htmlFor="assignedTo">Assign To Technician (Optional)</Label>
-                <Input
-                  id="assignedTo"
+                <SearchableSelect
+                  options={technicianOptions}
                   value={assignedTo}
-                  onChange={(e) => setAssignedTo(e.target.value)}
-                  placeholder="Technician ID (can be assigned later)"
+                  onValueChange={setAssignedTo}
+                  placeholder="Select a technician (optional)"
+                  searchPlaceholder="Search technicians by name, email, or phone..."
+                  emptyMessage="No technicians found"
+                  allowClear
+                  loading={loadingTechnicians}
+                  onSearchChange={setTechnicianSearch}
                 />
                 <p className="text-xs text-muted-foreground">
                   Leave empty to create as unassigned. You can assign later.

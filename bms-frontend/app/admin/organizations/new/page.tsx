@@ -209,7 +209,9 @@ export default function NewOrganizationPage() {
         organizationData.subscriptionId = subscriptionId;
       } else {
         // Subscription is required
-        setError('A subscription is required to create an organization. Please create a new subscription or select an existing one.');
+        setError(
+          'A subscription is required to create an organization. Please create a new subscription or select an existing one.',
+        );
         setIsSubmitting(false);
         setActiveTab('subscription');
         return;
@@ -379,7 +381,9 @@ export default function NewOrganizationPage() {
                 <CardContent className="pt-6 space-y-6">
                   <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800">
                     <div className="space-y-0.5 flex-1">
-                      <Label className="text-base font-semibold">Create Organization Admin User</Label>
+                      <Label className="text-base font-semibold">
+                        Create Organization Admin User
+                      </Label>
                       <p className="text-sm text-muted-foreground mt-1">
                         Create an admin user with ORG_ADMIN role for this organization
                       </p>
@@ -490,7 +494,7 @@ export default function NewOrganizationPage() {
                     <div>
                       <CardTitle className="text-2xl">Basic Information</CardTitle>
                       <CardDescription className="mt-1">
-                        Enter the organization's basic details
+                        Enter the organization&apos;s basic details
                       </CardDescription>
                     </div>
                   </div>
@@ -521,7 +525,10 @@ export default function NewOrganizationPage() {
                           checked={autoGenerateCode}
                           onCheckedChange={setAutoGenerateCode}
                         />
-                        <Label htmlFor="autoCode" className="text-xs text-muted-foreground cursor-pointer">
+                        <Label
+                          htmlFor="autoCode"
+                          className="text-xs text-muted-foreground cursor-pointer"
+                        >
                           Auto-generate
                         </Label>
                       </div>
@@ -553,7 +560,9 @@ export default function NewOrganizationPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
+                        <Label htmlFor="email" className="text-sm font-semibold">
+                          Email
+                        </Label>
                         <Input
                           id="email"
                           type="email"
@@ -565,7 +574,9 @@ export default function NewOrganizationPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-sm font-semibold">Phone</Label>
+                        <Label htmlFor="phone" className="text-sm font-semibold">
+                          Phone
+                        </Label>
                         <Input
                           id="phone"
                           type="tel"
@@ -578,7 +589,9 @@ export default function NewOrganizationPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address" className="text-sm font-semibold">Address</Label>
+                      <Label htmlFor="address" className="text-sm font-semibold">
+                        Address
+                      </Label>
                       <Textarea
                         id="address"
                         value={address}
@@ -685,7 +698,9 @@ export default function NewOrganizationPage() {
                               {SUBSCRIPTION_FEATURES[subscriptionTier].map((feature, idx) => (
                                 <li key={idx} className="flex items-start gap-3">
                                   <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
-                                  <span className="text-slate-700 dark:text-slate-300">{feature}</span>
+                                  <span className="text-slate-700 dark:text-slate-300">
+                                    {feature}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -741,8 +756,12 @@ export default function NewOrganizationPage() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Billing: <span className="font-medium">{selectedSubscription.billingCycle}</span> | Price:{' '}
-                        <span className="font-medium">ETB {selectedSubscription.price.toLocaleString()}</span>
+                        Billing:{' '}
+                        <span className="font-medium">{selectedSubscription.billingCycle}</span> |
+                        Price:{' '}
+                        <span className="font-medium">
+                          ETB {selectedSubscription.price.toLocaleString()}
+                        </span>
                       </p>
                     </div>
                   )}
@@ -783,7 +802,9 @@ export default function NewOrganizationPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="subdomain" className="text-sm font-semibold">Subdomain</Label>
+                      <Label htmlFor="subdomain" className="text-sm font-semibold">
+                        Subdomain
+                      </Label>
                       <div className="flex items-center gap-2">
                         <Input
                           id="subdomain"
@@ -800,7 +821,9 @@ export default function NewOrganizationPage() {
                       {previewUrl && (
                         <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                           <p className="text-xs text-muted-foreground mb-1">Preview URL:</p>
-                          <p className="text-sm font-mono text-blue-700 dark:text-blue-300">{previewUrl}</p>
+                          <p className="text-sm font-mono text-blue-700 dark:text-blue-300">
+                            {previewUrl}
+                          </p>
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground mt-1.5">
@@ -819,12 +842,18 @@ export default function NewOrganizationPage() {
                           Configure a custom domain for this organization
                         </p>
                       </div>
-                      <Switch checked={useCustomDomain} onCheckedChange={setUseCustomDomain} className="ml-4" />
+                      <Switch
+                        checked={useCustomDomain}
+                        onCheckedChange={setUseCustomDomain}
+                        className="ml-4"
+                      />
                     </div>
 
                     {useCustomDomain && (
                       <div className="space-y-2 p-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30">
-                        <Label htmlFor="domain" className="text-sm font-semibold">Custom Domain</Label>
+                        <Label htmlFor="domain" className="text-sm font-semibold">
+                          Custom Domain
+                        </Label>
                         <Input
                           id="domain"
                           type="text"
@@ -854,7 +883,7 @@ export default function NewOrganizationPage() {
                     <div>
                       <CardTitle className="text-2xl">Branding & Customization</CardTitle>
                       <CardDescription className="mt-1">
-                        Customize the organization's appearance and branding
+                        Customize the organization&apos;s appearance and branding
                       </CardDescription>
                     </div>
                   </div>
@@ -862,7 +891,9 @@ export default function NewOrganizationPage() {
                 <CardContent className="pt-6 space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="primaryColor" className="text-sm font-semibold">Primary Color</Label>
+                      <Label htmlFor="primaryColor" className="text-sm font-semibold">
+                        Primary Color
+                      </Label>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Input
@@ -889,7 +920,9 @@ export default function NewOrganizationPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="secondaryColor" className="text-sm font-semibold">Secondary Color</Label>
+                      <Label htmlFor="secondaryColor" className="text-sm font-semibold">
+                        Secondary Color
+                      </Label>
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Input
@@ -920,7 +953,9 @@ export default function NewOrganizationPage() {
 
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="companyName" className="text-sm font-semibold">Display Name</Label>
+                      <Label htmlFor="companyName" className="text-sm font-semibold">
+                        Display Name
+                      </Label>
                       <Input
                         id="companyName"
                         value={companyName}
@@ -934,7 +969,9 @@ export default function NewOrganizationPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="tagline" className="text-sm font-semibold">Tagline</Label>
+                      <Label htmlFor="tagline" className="text-sm font-semibold">
+                        Tagline
+                      </Label>
                       <Input
                         id="tagline"
                         value={tagline}
@@ -955,7 +992,7 @@ export default function NewOrganizationPage() {
           {/* Action buttons - sticky footer */}
           <div className="sticky bottom-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 mt-8 -mx-4 md:-mx-6 px-4 md:px-6 py-4 flex flex-col sm:flex-row justify-between sm:justify-end gap-4 z-50 shadow-lg">
             <div className="flex flex-col gap-2 text-sm sm:hidden">
-              {(!createNewSubscription && !subscriptionId) && (
+              {!createNewSubscription && !subscriptionId && (
                 <div className="flex items-center gap-2 text-destructive font-semibold">
                   <span>⚠️</span>
                   <span>Subscription is required</span>
@@ -967,12 +1004,14 @@ export default function NewOrganizationPage() {
                   <span>Please select subscription tier and billing cycle</span>
                 </div>
               )}
-              {name && code && (createNewSubscription ? subscriptionTier && billingCycle : subscriptionId) && (
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span>All required fields completed</span>
-                </div>
-              )}
+              {name &&
+                code &&
+                (createNewSubscription ? subscriptionTier && billingCycle : subscriptionId) && (
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                    <span>All required fields completed</span>
+                  </div>
+                )}
             </div>
             <div className="flex gap-4 w-full sm:w-auto">
               <Link href="/admin/organizations" className="flex-1 sm:flex-initial">

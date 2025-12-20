@@ -289,7 +289,7 @@ export async function updateSubscription(
 
   // Handle start date changes
   if (input.startDate !== undefined) {
-    updates.startDate = input.startDate ? new Date(input.startDate) : null;
+    updates.startDate = input.startDate ? new Date(input.startDate) : (null as any);
     // Recalculate end date if start date changed
     if (updates.startDate && subscription.billingCycle) {
       const billingCycle = input.billingCycle || subscription.billingCycle;

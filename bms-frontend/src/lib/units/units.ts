@@ -18,7 +18,9 @@ export interface Unit {
   bedrooms?: number | null;
   bathrooms?: number | null;
   status: UnitStatus;
-  rentAmount?: number | null; // base rent in ETB
+  rentAmount?: number | null; // legacy/base rent in ETB
+  ratePerSqmOverride?: number | null;
+  flatRentOverride?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

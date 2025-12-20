@@ -13,9 +13,13 @@ import { ensureInvoiceIndexes } from '@/lib/invoices/invoices';
 import { ensurePaymentIndexes } from '@/lib/payments/payments';
 import { ensureComplaintIndexes } from '@/lib/complaints/complaints';
 import { ensureWorkOrderIndexes } from '@/lib/work-orders/work-orders';
+import { ensureAssetIndexes } from '@/lib/assets/assets';
 import { ensureMeterIndexes } from '@/lib/meters/meters';
 import { ensureMeterReadingIndexes } from '@/lib/meter-readings/meter-readings';
+import { ensureUtilityPaymentIndexes } from '@/lib/utilities/utility-payments';
 import { ensureParkingSpaceIndexes } from '@/lib/parking/parking-spaces';
+import { ensureParkingPricingIndexes } from '@/lib/parking/parking-pricing';
+import { ensureParkingAssignmentIndexes } from '@/lib/parking/parking-assignments';
 import { ensureVehicleIndexes } from '@/lib/parking/vehicles';
 import { ensureVisitorLogIndexes } from '@/lib/security/visitor-logs';
 import { ensureVisitorQRCodeIndexes } from '@/lib/security/visitor-qr-codes';
@@ -42,9 +46,13 @@ export async function ensureAllIndexes(): Promise<void> {
       ensurePaymentIndexes(),
       ensureComplaintIndexes(),
       ensureWorkOrderIndexes(),
+      ensureAssetIndexes(),
       ensureMeterIndexes(),
       ensureMeterReadingIndexes(),
+      ensureUtilityPaymentIndexes(),
       ensureParkingSpaceIndexes(),
+      ensureParkingPricingIndexes(),
+      ensureParkingAssignmentIndexes(),
       ensureVehicleIndexes(),
       ensureVisitorLogIndexes(),
       ensureVisitorQRCodeIndexes(),

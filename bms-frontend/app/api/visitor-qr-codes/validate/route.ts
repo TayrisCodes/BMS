@@ -93,6 +93,34 @@ export async function POST(request: NextRequest) {
       // Mark QR code as used
       await markQRCodeAsUsed(qrCodeDoc._id, visitorLog._id);
 
+      // Send visitor arrival notification to tenant
+      try {
+        const { notifyVisitorArrived } = await import('@/modules/notifications/security-events');
+        await notifyVisitorArrived(
+          qrCodeDoc.tenantId,
+          qrCodeDoc.organizationId,
+          visitorLog.visitorName,
+          visitorLog.visitorPhone || null,
+          unit?.unitNumber || null,
+          unit?.floor || null,
+          building?.name || 'Building',
+          visitorLog.entryTime,
+        );
+      } catch (error) {
+        console.error('Failed to send visitor arrival notification:', error);
+        // Don't fail the request if notification fails
+      }
+
+      // Get tenant, unit, and building details for response
+      const { findTenantById } = await import('@/lib/tenants/tenants');
+      const { findUnitById } = await import('@/lib/units/units');
+      const { findBuildingById } = await import('@/lib/buildings/buildings');
+      const tenant = await findTenantById(qrCodeDoc.tenantId, qrCodeDoc.organizationId);
+      const unit = qrCodeDoc.unitId
+        ? await findUnitById(qrCodeDoc.unitId, qrCodeDoc.organizationId)
+        : null;
+      const building = await findBuildingById(qrCodeDoc.buildingId, qrCodeDoc.organizationId);
+
       return NextResponse.json(
         {
           message: 'QR code validated and visitor logged successfully',
@@ -110,6 +138,31 @@ export async function POST(request: NextRequest) {
             used: true,
             usedAt: new Date(),
           },
+          // Tenant details
+          tenant: tenant
+            ? {
+                _id: tenant._id,
+                firstName: tenant.firstName,
+                lastName: tenant.lastName,
+                primaryPhone: tenant.primaryPhone,
+              }
+            : null,
+          // Unit and building details
+          unit: unit
+            ? {
+                _id: unit._id,
+                unitNumber: unit.unitNumber,
+                floor: unit.floor,
+                unitType: unit.unitType,
+              }
+            : null,
+          building: building
+            ? {
+                _id: building._id,
+                name: building.name,
+                address: building.address,
+              }
+            : null,
         },
         { status: 200 },
       );
@@ -181,6 +234,18 @@ export async function GET(request: Request) {
     const now = new Date();
     const isValid = !qrCodeDoc.used && now >= qrCodeDoc.validFrom && now <= qrCodeDoc.validUntil;
 
+    // Get tenant details
+    const { findTenantById } = await import('@/lib/tenants/tenants');
+    const tenant = await findTenantById(qrCodeDoc.tenantId, qrCodeDoc.organizationId);
+
+    // Get unit and building details
+    const { findUnitById } = await import('@/lib/units/units');
+    const { findBuildingById } = await import('@/lib/buildings/buildings');
+    const unit = qrCodeDoc.unitId
+      ? await findUnitById(qrCodeDoc.unitId, qrCodeDoc.organizationId)
+      : null;
+    const building = await findBuildingById(qrCodeDoc.buildingId, qrCodeDoc.organizationId);
+
     return NextResponse.json({
       qrCode: {
         _id: qrCodeDoc._id,
@@ -194,6 +259,31 @@ export async function GET(request: Request) {
         used: qrCodeDoc.used,
         usedAt: qrCodeDoc.usedAt,
         isValid,
+        // Tenant details
+        tenant: tenant
+          ? {
+              _id: tenant._id,
+              firstName: tenant.firstName,
+              lastName: tenant.lastName,
+              primaryPhone: tenant.primaryPhone,
+            }
+          : null,
+        // Unit and building details
+        unit: unit
+          ? {
+              _id: unit._id,
+              unitNumber: unit.unitNumber,
+              floor: unit.floor,
+              unitType: unit.unitType,
+            }
+          : null,
+        building: building
+          ? {
+              _id: building._id,
+              name: building.name,
+              address: building.address,
+            }
+          : null,
       },
     });
   } catch (error) {

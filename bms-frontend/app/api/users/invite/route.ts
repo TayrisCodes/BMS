@@ -26,6 +26,10 @@ export async function POST(request: NextRequest) {
       roles: UserRole[];
       organizationId?: string;
       name?: string | null;
+      password?: string;
+      createType?: 'invite' | 'direct';
+      emailFrom?: string;
+      emailFromName?: string;
     };
 
     // Validate required fields
@@ -61,26 +65,78 @@ export async function POST(request: NextRequest) {
       validateOrganizationAccess(context, organizationId);
     }
 
-    // Create invitation
-    const result = await createInvitation({
-      organizationId,
-      email: body.email || null,
-      phone: body.phone,
-      roles: body.roles,
-      invitedBy: context.userId,
-      name: body.name || null,
-    });
+    // Validate role restrictions for ORG_ADMIN
+    if (!isSuperAdmin(context)) {
+      // ORG_ADMIN cannot create users with ORG_ADMIN, SUPER_ADMIN, or TENANT roles
+      const restrictedRoles: UserRole[] = ['ORG_ADMIN', 'SUPER_ADMIN', 'TENANT'];
+      const hasRestrictedRole = body.roles.some((role) => restrictedRoles.includes(role));
 
-    // Log user invitation
+      if (hasRestrictedRole) {
+        return NextResponse.json(
+          {
+            error:
+              'You cannot create users with ORG_ADMIN, SUPER_ADMIN, or TENANT roles. TENANT accounts must be created through the tenants page.',
+          },
+          { status: 403 },
+        );
+      }
+    }
+
+    // Handle direct user creation vs invitation
+    let result: { user: any; token?: string; activationUrl?: string };
+
+    if (body.createType === 'direct' && body.password) {
+      // Direct user creation with password
+      const { createUser } = await import('@/lib/auth/users');
+      const bcrypt = await import('bcryptjs');
+      const passwordHash = await bcrypt.hash(body.password, 10);
+
+      const user = await createUser({
+        organizationId,
+        phone: body.phone,
+        email: body.email || null,
+        passwordHash,
+        roles: body.roles,
+        status: 'active',
+      });
+
+      // Update user with name if provided
+      if (body.name) {
+        const { updateUser } = await import('@/lib/auth/users');
+        await updateUser(user._id.toString(), { name: body.name }, false);
+      }
+
+      result = {
+        user: {
+          ...user,
+          name: body.name || null,
+        },
+      };
+    } else {
+      // Create invitation (send email)
+      result = await createInvitation({
+        organizationId,
+        email: body.email || null,
+        phone: body.phone,
+        roles: body.roles,
+        invitedBy: context.userId,
+        name: body.name || null,
+        emailFrom: body.emailFrom,
+        emailFromName: body.emailFromName,
+      });
+    }
+
+    // Log user creation/invitation
     await logActivitySafe({
       userId: result.user._id.toString(),
       organizationId: result.user.organizationId,
-      action: 'user_invited',
+      action: body.createType === 'direct' ? 'user_created' : 'user_invited',
       details: {
-        invitedBy: context.userId,
+        createdBy: context.userId,
         roles: body.roles,
         email: body.email || null,
         phone: body.phone,
+        createType: body.createType || 'invite',
       },
       request,
     });
@@ -91,9 +147,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: 'User invitation sent successfully',
+        message:
+          body.createType === 'direct'
+            ? 'User created successfully'
+            : 'User invitation sent successfully',
         userId: result.user._id.toString(),
-        ...(isDev
+        ...(isDev && result.token
           ? {
               token: result.token,
               activationUrl: result.activationUrl,

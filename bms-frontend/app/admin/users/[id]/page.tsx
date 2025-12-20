@@ -87,6 +87,9 @@ export default function UserDetailPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -183,20 +186,48 @@ export default function UserDetailPage() {
     }
   }
 
-  async function handleDelete() {
-    if (
-      !confirm('Are you sure you want to delete this user? This will set their status to inactive.')
-    ) {
+  function openDeleteModal() {
+    setDeleteConfirmationText('');
+    setDeleteModalOpen(true);
+  }
+
+  function closeDeleteModal() {
+    setDeleteModalOpen(false);
+    setDeleteConfirmationText('');
+  }
+
+  async function confirmDelete() {
+    if (!user) return;
+
+    // Get the primary role (first role in the array)
+    const primaryRole = user.roles[0] || '';
+    const requiredText = primaryRole;
+
+    // Validate that the confirmation text matches
+    if (deleteConfirmationText.trim() !== requiredText) {
       return;
     }
 
+    setIsDeleting(true);
     try {
       await apiDelete(`/api/users/${userId}`);
       router.push('/admin/users');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to delete user');
+      setIsDeleting(false);
     }
   }
+
+  // Get the required confirmation text based on user's primary role
+  const getRequiredConfirmationText = () => {
+    if (!user) return '';
+    return user.roles[0] || '';
+  };
+
+  const isDeleteEnabled = () => {
+    const requiredText = getRequiredConfirmationText();
+    return deleteConfirmationText.trim() === requiredText;
+  };
 
   async function handlePasswordReset() {
     setPasswordError(null);
@@ -285,7 +316,9 @@ export default function UserDetailPage() {
           <div className="flex items-center gap-3">
             <User className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold">{user.name || 'User'}</h1>
+              <h1 className="text-3xl font-bold">
+                {user.name || user.email || user.phone || 'User'}
+              </h1>
               <p className="text-muted-foreground">User details and management</p>
             </div>
           </div>
@@ -300,7 +333,7 @@ export default function UserDetailPage() {
             </Link>
           )}
           {canDelete && (
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={openDeleteModal}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
@@ -594,8 +627,8 @@ export default function UserDetailPage() {
                 <>
                   <div className="p-4 bg-muted rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      <strong>Note:</strong> You can reset this user&apos;s password. The new password
-                      must meet the following requirements:
+                      <strong>Note:</strong> You can reset this user&apos;s password. The new
+                      password must meet the following requirements:
                     </p>
                     <ul className="text-sm text-muted-foreground mt-2 list-disc list-inside space-y-1">
                       <li>Minimum 8 characters</li>
@@ -686,6 +719,80 @@ export default function UserDetailPage() {
           <UserActivityLogs userId={userId} />
         </TabsContent>
       </Tabs>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={deleteModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDeleteModal();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-destructive/10 rounded-full">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <DialogTitle>Delete User Account</DialogTitle>
+            </div>
+            <DialogDescription className="pt-4">
+              Warning: This action cannot be undone! If you delete this account, the user will lose
+              access to everything.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="font-semibold text-destructive mb-2">
+                Warning: This action cannot be undone!
+              </p>
+              <p className="text-sm">
+                If you delete this account, the user will lose access to everything:
+              </p>
+              <ul className="list-disc list-inside text-sm mt-2 space-y-1 text-muted-foreground">
+                <li>All account data and settings</li>
+                <li>Access to the system</li>
+                <li>Associated records and history</li>
+              </ul>
+            </div>
+            {user && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  To confirm deletion, please type the user&apos;s role:{' '}
+                  <span className="font-bold text-primary">{getRequiredConfirmationText()}</span>
+                </p>
+                <Input
+                  placeholder={`Type "${getRequiredConfirmationText()}" to confirm`}
+                  value={deleteConfirmationText}
+                  onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                  className="mt-2"
+                  autoFocus
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteModal} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={!isDeleteEnabled() || isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Yes, Delete Account'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

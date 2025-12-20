@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
           billingCycle: body.subscription.billingCycle,
           trialDays: body.subscription.trialDays ?? 14, // Default 14-day trial
           autoRenew: body.subscription.autoRenew ?? true,
-          discountType: body.subscription.discountType,
-          discountValue: body.subscription.discountValue,
+          discountType: body.subscription.discountType ?? null,
+          discountValue: body.subscription.discountValue ?? null,
         };
 
         subscription = await createSubscription(subscriptionInput);
@@ -197,7 +197,10 @@ export async function POST(request: NextRequest) {
     // Validate that subscription was created/assigned successfully
     if (!subscription && body.subscriptionId) {
       // If subscriptionId was provided but subscription not found, this is an error
-      return NextResponse.json({ error: 'Subscription not found or could not be assigned' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Subscription not found or could not be assigned' },
+        { status: 404 },
+      );
     }
 
     if (!subscription) {
@@ -242,18 +245,12 @@ export async function POST(request: NextRequest) {
       // Check if email or phone already exists
       const existingUser = await findUserByEmailOrPhone(email.trim());
       if (existingUser) {
-        return NextResponse.json(
-          { error: 'Email or phone already exists' },
-          { status: 409 },
-        );
+        return NextResponse.json({ error: 'Email or phone already exists' }, { status: 409 });
       }
 
       const existingUserByPhone = await findUserByEmailOrPhone(phone.trim());
       if (existingUserByPhone) {
-        return NextResponse.json(
-          { error: 'Phone number already exists' },
-          { status: 409 },
-        );
+        return NextResponse.json({ error: 'Phone number already exists' }, { status: 409 });
       }
 
       // Hash password
@@ -267,7 +264,6 @@ export async function POST(request: NextRequest) {
         passwordHash,
         roles: ['ORG_ADMIN'],
         status: 'active',
-        name: name?.trim() || null,
       });
 
       // Log admin user creation
@@ -299,7 +295,8 @@ export async function POST(request: NextRequest) {
           code: updatedOrganization?.code || organization.code,
           contactInfo: updatedOrganization?.contactInfo || organization.contactInfo,
           status: updatedOrganization?.status || organization.status || 'active',
-          subscriptionId: updatedOrganization?.subscriptionId || organization.subscriptionId || null,
+          subscriptionId:
+            updatedOrganization?.subscriptionId || organization.subscriptionId || null,
           domain: updatedOrganization?.domain || organization.domain || null,
           subdomain: updatedOrganization?.subdomain || organization.subdomain || null,
           branding: updatedOrganization?.branding || organization.branding || null,

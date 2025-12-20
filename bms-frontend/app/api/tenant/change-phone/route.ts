@@ -29,10 +29,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!body.newPhone || !body.password) {
-      return NextResponse.json(
-        { error: 'newPhone and password are required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'newPhone and password are required' }, { status: 400 });
     }
 
     // Get user
@@ -51,10 +48,7 @@ export async function POST(request: NextRequest) {
     // Check if new phone is already in use
     const existingUser = await findUserByPhone(body.newPhone, user.organizationId);
     if (existingUser && existingUser._id !== user._id) {
-      return NextResponse.json(
-        { error: 'Phone number is already in use' },
-        { status: 409 },
-      );
+      return NextResponse.json({ error: 'Phone number is already in use' }, { status: 409 });
     }
 
     // Check if tenant with new phone exists
@@ -72,10 +66,12 @@ export async function POST(request: NextRequest) {
     // Update tenant phone if tenantId exists
     if (user.tenantId) {
       const db = await getDb();
-      await db.collection('tenants').updateOne(
-        { _id: new ObjectId(user.tenantId) },
-        { $set: { primaryPhone: body.newPhone.trim(), updatedAt: new Date() } },
-      );
+      await db
+        .collection('tenants')
+        .updateOne(
+          { _id: new ObjectId(user.tenantId) },
+          { $set: { primaryPhone: body.newPhone.trim(), updatedAt: new Date() } },
+        );
     }
 
     return NextResponse.json({ message: 'Phone number changed successfully' });
@@ -84,4 +80,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to change phone number' }, { status: 500 });
   }
 }
-

@@ -230,7 +230,8 @@ export default function TenantDetailPage() {
           <CardHeader>
             <CardTitle>Unit & Lease History</CardTitle>
             <CardDescription>
-              Complete history of units occupied by this tenant ({leases.length} lease{leases.length !== 1 ? 's' : ''})
+              Complete history of units occupied by this tenant ({leases.length} lease
+              {leases.length !== 1 ? 's' : ''})
             </CardDescription>
           </CardHeader>
           <CardContent>

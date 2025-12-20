@@ -33,9 +33,17 @@ import {
   UserX,
   Mail,
   Shield,
+  Building2,
+  Activity,
+  BarChart3,
+  Download,
+  Upload,
+  UserPlus,
 } from 'lucide-react';
 import { apiGet, apiDelete } from '@/lib/utils/api-client';
 import type { UserRole, UserStatus } from '@/lib/auth/types';
+import { BulkOperationsDialog } from '@/components/users/BulkOperationsDialog';
+import { CSVImportDialog } from '@/components/users/CSVImportDialog';
 
 interface User {
   id: string;
@@ -82,13 +90,41 @@ export default function UsersPage() {
     suspended: 0,
   });
   const [canInvite, setCanInvite] = useState(false);
+  const [isOrgAdmin, setIsOrgAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkOperationOpen, setBulkOperationOpen] = useState(false);
+  const [bulkOperationType, setBulkOperationType] = useState<'invite' | 'update' | 'delete'>(
+    'invite',
+  );
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   useEffect(() => {
     async function checkPermissions() {
       try {
-        const profile = await apiGet<{ roles: UserRole[] }>('/api/users/me');
+        const profile = await apiGet<{ roles: UserRole[]; id?: string }>('/api/users/me');
         const roles = profile.roles || [];
-        setCanInvite(roles.includes('ORG_ADMIN') || roles.includes('SUPER_ADMIN'));
+        const orgAdmin = roles.includes('ORG_ADMIN');
+        const superAdmin = roles.includes('SUPER_ADMIN');
+        setCanInvite(orgAdmin || superAdmin);
+        setIsOrgAdmin(orgAdmin);
+        setIsSuperAdmin(superAdmin);
+        setCurrentUserId(profile.id || null);
+
+        // Fetch organizations if SUPER_ADMIN
+        if (superAdmin) {
+          try {
+            const orgsData = await apiGet<{
+              organizations: Array<{ id: string; name: string }>;
+            }>('/api/organizations?limit=1000');
+            setOrganizations(orgsData.organizations || []);
+          } catch (err) {
+            console.error('Failed to fetch organizations:', err);
+          }
+        }
       } catch (err) {
         console.error('Failed to check permissions:', err);
       }
@@ -98,7 +134,10 @@ export default function UsersPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      // Use dedicated stats endpoint instead of fetching all users
+      // Use dedicated stats endpoint with breakdown for SUPER_ADMIN
+      const url = isSuperAdmin
+        ? '/api/users/stats?breakdown=organization&role=true'
+        : '/api/users/stats';
       const data = await apiGet<{
         stats: {
           total: number;
@@ -107,7 +146,20 @@ export default function UsersPage() {
           inactive: number;
           suspended: number;
         };
-      }>('/api/users/stats');
+        byOrganization?: Array<{
+          organizationId: string;
+          organizationName: string;
+          stats: {
+            total: number;
+            active: number;
+            invited: number;
+            inactive: number;
+            suspended: number;
+          };
+        }>;
+        byRole?: Record<string, number>;
+        trends?: { last30Days: number; last90Days: number };
+      }>(url);
 
       setStats({
         total: data.stats.total || 0,
@@ -118,7 +170,7 @@ export default function UsersPage() {
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     }
-  }, []);
+  }, [isSuperAdmin]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -142,15 +194,20 @@ export default function UsersPage() {
         params.append('search', searchTerm);
       }
 
+      // Add organization filter for SUPER_ADMIN
+      if (isSuperAdmin && organizationFilter !== 'all') {
+        params.append('organizationId', organizationFilter);
+      }
+
       const data = await apiGet<UsersResponse>(`/api/users?${params.toString()}`);
       setUsers(data.users || []);
-      setPagination(data.pagination || pagination);
+      setPagination((prev) => data.pagination || prev);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
       setIsLoading(false);
     }
-  }, [page, roleFilter, statusFilter, searchTerm]);
+  }, [page, roleFilter, statusFilter, searchTerm, organizationFilter, isSuperAdmin]);
 
   // Fetch stats only once on mount
   useEffect(() => {
@@ -193,14 +250,80 @@ export default function UsersPage() {
             <p className="text-muted-foreground">Manage system users and permissions</p>
           </div>
         </div>
-        {canInvite && (
-          <Link href="/admin/users/invite">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Invite User
-            </Button>
-          </Link>
-        )}
+        <div className="flex gap-2">
+          {isSuperAdmin && (
+            <>
+              <Link href="/admin/users/activity">
+                <Button variant="outline">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Activity Logs
+                </Button>
+              </Link>
+              <Link href="/admin/users/analytics">
+                <Button variant="outline">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Button>
+              </Link>
+            </>
+          )}
+          {isOrgAdmin && (
+            <>
+              <Link href="/admin/users/monitoring">
+                <Button variant="outline">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Monitoring
+                </Button>
+              </Link>
+              <Link href="/admin/users/onboarding">
+                <Button variant="outline">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Onboarding
+                </Button>
+              </Link>
+            </>
+          )}
+          {canInvite && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setBulkOperationType('invite');
+                  setBulkOperationOpen(true);
+                }}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Bulk Invite
+              </Button>
+              <Button variant="outline" onClick={() => setCsvImportOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const params = new URLSearchParams();
+                  if (roleFilter !== 'all') params.append('role', roleFilter);
+                  if (statusFilter !== 'all') params.append('status', statusFilter);
+                  if (searchTerm) params.append('search', searchTerm);
+                  if (isSuperAdmin && organizationFilter !== 'all') {
+                    params.append('organizationId', organizationFilter);
+                  }
+                  window.open(`/api/users/export?${params.toString()}`, '_blank');
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+              <Link href="/admin/users/invite">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite User
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -244,6 +367,40 @@ export default function UsersPage() {
       </div>
 
       {error && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{error}</div>}
+
+      {/* Bulk Operations Bar */}
+      {selectedUserIds.size > 0 && (
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+          <span className="text-sm font-medium">
+            {selectedUserIds.size} user{selectedUserIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBulkOperationType('update');
+                setBulkOperationOpen(true);
+              }}
+            >
+              Update Status
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setBulkOperationType('delete');
+                setBulkOperationOpen(true);
+              }}
+            >
+              Delete
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedUserIds(new Set())}>
+              Clear Selection
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <form onSubmit={handleSearch} className="flex gap-4 items-center">
@@ -297,6 +454,27 @@ export default function UsersPage() {
             <SelectItem value="suspended">Suspended</SelectItem>
           </SelectContent>
         </Select>
+        {isSuperAdmin && (
+          <Select
+            value={organizationFilter}
+            onValueChange={(value) => {
+              setOrganizationFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Filter by organization" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Organizations</SelectItem>
+              {organizations.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Button type="submit" variant="outline">
           <Search className="h-4 w-4 mr-2" />
           Search
@@ -308,6 +486,22 @@ export default function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              {isOrgAdmin && (
+                <TableHead className="w-12">
+                  <input
+                    type="checkbox"
+                    checked={selectedUserIds.size === users.length && users.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedUserIds(new Set(users.map((u) => u.id)));
+                      } else {
+                        setSelectedUserIds(new Set());
+                      }
+                    }}
+                    className="rounded"
+                  />
+                </TableHead>
+              )}
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Phone</TableHead>
@@ -321,13 +515,13 @@ export default function UsersPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={isOrgAdmin ? 9 : 8} className="text-center py-8">
                   <p className="text-muted-foreground">Loading users...</p>
                 </TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={isOrgAdmin ? 9 : 8} className="text-center py-8">
                   <p className="text-muted-foreground">
                     {error ? 'Failed to load users' : 'No users found. Invite your first user.'}
                   </p>
@@ -336,7 +530,27 @@ export default function UsersPage() {
             ) : (
               users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
+                  {isOrgAdmin && (
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.has(user.id)}
+                        onChange={(e) => {
+                          const newSet = new Set(selectedUserIds);
+                          if (e.target.checked) {
+                            newSet.add(user.id);
+                          } else {
+                            newSet.delete(user.id);
+                          }
+                          setSelectedUserIds(newSet);
+                        }}
+                        className="rounded"
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell className="font-medium">
+                    {user.name || user.email || user.phone || 'N/A'}
+                  </TableCell>
                   <TableCell>{user.email || 'N/A'}</TableCell>
                   <TableCell>{user.phone}</TableCell>
                   <TableCell>
@@ -362,7 +576,17 @@ export default function UsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {user.organizationName || 'N/A'}
+                    {isSuperAdmin && user.organizationId ? (
+                      <Link
+                        href={`/admin/organizations/${user.organizationId}/admins`}
+                        className="text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Building2 className="h-3 w-3" />
+                        {user.organizationName || 'N/A'}
+                      </Link>
+                    ) : (
+                      user.organizationName || 'N/A'
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
@@ -374,14 +598,39 @@ export default function UsersPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Link href={`/admin/users/${user.id}/edit`}>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {/* ORG_ADMIN cannot edit/delete other ORG_ADMIN or SUPER_ADMIN, but can edit their own account */}
+                      {(() => {
+                        const isOwnAccount = currentUserId === user.id;
+                        const hasRestrictedRole =
+                          user.roles.includes('ORG_ADMIN') || user.roles.includes('SUPER_ADMIN');
+                        const canEdit =
+                          isSuperAdmin ||
+                          (isOrgAdmin && (isOwnAccount || !hasRestrictedRole)) ||
+                          (!isOrgAdmin && !isSuperAdmin);
+                        const canDelete =
+                          isSuperAdmin || (isOrgAdmin && !hasRestrictedRole && !isOwnAccount);
+
+                        return (
+                          <>
+                            {canEdit && (
+                              <Link href={`/admin/users/${user.id}/edit`}>
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(user.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -419,6 +668,25 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <BulkOperationsDialog
+        open={bulkOperationOpen}
+        onOpenChange={setBulkOperationOpen}
+        operation={bulkOperationType}
+        selectedUserIds={Array.from(selectedUserIds)}
+        onSuccess={() => {
+          setSelectedUserIds(new Set());
+          fetchUsers();
+        }}
+      />
+
+      <CSVImportDialog
+        open={csvImportOpen}
+        onOpenChange={setCsvImportOpen}
+        onSuccess={() => {
+          fetchUsers();
+        }}
+      />
     </div>
   );
 }

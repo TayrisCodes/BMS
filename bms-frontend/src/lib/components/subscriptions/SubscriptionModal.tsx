@@ -169,7 +169,7 @@ export function SubscriptionModal({
     if (!date) return '';
     try {
       const d = new Date(date);
-      return d.toISOString().split('T')[0];
+      return d.toISOString().split('T')[0] || '';
     } catch {
       return '';
     }
@@ -296,9 +296,7 @@ export function SubscriptionModal({
     setIsCancelling(true);
 
     try {
-      await apiDelete(`/api/subscriptions/${existingSubscription.id}`, {
-        reason: 'Cancelled by admin',
-      });
+      await apiDelete(`/api/subscriptions/${existingSubscription.id}`);
       onSuccess?.();
       onOpenChange(false);
     } catch (err) {

@@ -68,6 +68,19 @@ interface Subscription {
   status: SubscriptionStatus;
   billingCycle: BillingCycle;
   price: number;
+  startDate: string | Date;
+  autoRenew: boolean;
+  features: string[];
+  basePrice?: number;
+  discountType?: 'percentage' | 'fixed' | null;
+  discountValue?: number | null;
+  endDate?: string | Date | null;
+  trialEndDate?: string | Date | null;
+  nextBillingDate?: string | Date | null;
+  maxBuildings?: number | null;
+  maxUnits?: number | null;
+  maxUsers?: number | null;
+  notes?: string | null;
 }
 
 export default function EditOrganizationPage() {
@@ -310,7 +323,7 @@ export default function EditOrganizationPage() {
                     <div>
                       <CardTitle className="text-2xl">Basic Information</CardTitle>
                       <CardDescription className="mt-1">
-                        Update the organization's basic details
+                        Update the organization&apos;s basic details
                       </CardDescription>
                     </div>
                   </div>
@@ -459,7 +472,8 @@ export default function EditOrganizationPage() {
                   ) : (
                     <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
                       <p className="text-sm text-yellow-900 dark:text-yellow-100 mb-4">
-                        No subscription assigned. Please create a subscription for this organization.
+                        No subscription assigned. Please create a subscription for this
+                        organization.
                       </p>
                       <Button
                         type="button"
@@ -576,7 +590,7 @@ export default function EditOrganizationPage() {
                     <div>
                       <CardTitle className="text-2xl">Branding & Customization</CardTitle>
                       <CardDescription className="mt-1">
-                        Customize the organization's appearance and branding
+                        Customize the organization&apos;s appearance and branding
                       </CardDescription>
                     </div>
                   </div>

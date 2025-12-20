@@ -30,6 +30,12 @@ export interface WorkOrder {
   assignedTo?: string | null; // ObjectId ref to users (technician)
   estimatedCost?: number | null; // ETB
   actualCost?: number | null; // ETB
+  scheduledDate?: Date | null; // When work is scheduled to be performed
+  scheduledTimeWindow?: {
+    start: Date;
+    end: Date;
+  } | null; // Time window for scheduled work
+  startedAt?: Date | null; // When technician started work
   completedAt?: Date | null;
   notes?: string | null;
   photos?: string[] | null; // URLs
@@ -73,6 +79,18 @@ export async function ensureWorkOrderIndexes(db?: Db): Promise<void> {
     {
       key: { priority: 1 },
       name: 'priority',
+    },
+    // Index on scheduledDate for scheduling queries
+    {
+      key: { scheduledDate: 1 },
+      sparse: true,
+      name: 'scheduledDate_sparse',
+    },
+    // Index on assignedTo and scheduledDate for technician scheduling
+    {
+      key: { assignedTo: 1, scheduledDate: 1 },
+      sparse: true,
+      name: 'assigned_scheduled',
     },
   ];
 
@@ -118,16 +136,24 @@ async function validateUnitBelongsToOrg(
 export interface CreateWorkOrderInput {
   organizationId: string;
   buildingId: string;
-  complaintId?: string | null;
-  unitId?: string | null;
-  assetId?: string | null;
+  complaintId?: string | null | undefined;
+  unitId?: string | null | undefined;
+  assetId?: string | null | undefined;
   title: string;
   description: string;
   category: WorkOrderCategory;
-  priority?: WorkOrderPriority;
-  status?: WorkOrderStatus;
-  assignedTo?: string | null;
-  estimatedCost?: number | null;
+  priority?: WorkOrderPriority | undefined;
+  status?: WorkOrderStatus | undefined;
+  assignedTo?: string | null | undefined;
+  estimatedCost?: number | null | undefined;
+  scheduledDate?: Date | string | null | undefined;
+  scheduledTimeWindow?:
+    | {
+        start: Date | string;
+        end: Date | string;
+      }
+    | null
+    | undefined;
   createdBy: string;
 }
 
@@ -146,6 +172,25 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<Work
     throw new Error('title, description, and category are required');
   }
 
+  // Convert date strings to Date objects
+  const scheduledDate =
+    input.scheduledDate && typeof input.scheduledDate === 'string'
+      ? new Date(input.scheduledDate)
+      : input.scheduledDate || null;
+
+  const scheduledTimeWindow = input.scheduledTimeWindow
+    ? {
+        start:
+          typeof input.scheduledTimeWindow.start === 'string'
+            ? new Date(input.scheduledTimeWindow.start)
+            : input.scheduledTimeWindow.start,
+        end:
+          typeof input.scheduledTimeWindow.end === 'string'
+            ? new Date(input.scheduledTimeWindow.end)
+            : input.scheduledTimeWindow.end,
+      }
+    : null;
+
   const doc: Omit<WorkOrder, '_id'> = {
     organizationId: input.organizationId,
     buildingId: input.buildingId,
@@ -160,6 +205,9 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<Work
     assignedTo: input.assignedTo ?? null,
     estimatedCost: input.estimatedCost ?? null,
     actualCost: null,
+    scheduledDate,
+    scheduledTimeWindow,
+    startedAt: null,
     completedAt: null,
     notes: null,
     photos: null,

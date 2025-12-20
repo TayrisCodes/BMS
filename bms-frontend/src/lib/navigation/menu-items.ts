@@ -23,6 +23,8 @@ import {
   AlertCircle,
   Activity,
   Flag,
+  DollarSign,
+  Bot,
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -134,6 +136,18 @@ export const menuItems: MenuItem[] = [
     roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'ACCOUNTANT'],
   },
   {
+    label: 'Messages',
+    icon: MessageSquare,
+    path: '/org/messages',
+    roles: ['ORG_ADMIN', 'BUILDING_MANAGER'],
+  },
+  {
+    label: 'Assistant',
+    icon: Bot,
+    path: '/org/bot',
+    roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER', 'ACCOUNTANT'],
+  },
+  {
     label: 'Complaints',
     icon: MessageSquare,
     path: '/org/complaints',
@@ -164,6 +178,26 @@ export const menuItems: MenuItem[] = [
     roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'ACCOUNTANT', 'AUDITOR'],
   },
   {
+    label: 'Security',
+    icon: Shield,
+    path: '/org/security',
+    roles: ['ORG_ADMIN'],
+    children: [
+      {
+        label: 'Visitor Management',
+        icon: UserCheck,
+        path: '/org/security',
+        roles: ['ORG_ADMIN'],
+      },
+      {
+        label: 'Visitor Logs',
+        icon: UserCheck,
+        path: '/org/security/visitors',
+        roles: ['ORG_ADMIN'],
+      },
+    ],
+  },
+  {
     label: 'Settings',
     icon: Settings,
     path: '/org/settings',
@@ -192,8 +226,22 @@ export const menuItems: MenuItem[] = [
   {
     label: 'Utilities',
     icon: Gauge,
-    path: '/org/utilities',
-    roles: ['FACILITY_MANAGER'],
+    path: '/org/meters',
+    roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER'],
+    children: [
+      {
+        label: 'Meters',
+        icon: Gauge,
+        path: '/org/meters',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER'],
+      },
+      {
+        label: 'Utility Payments',
+        icon: Receipt,
+        path: '/org/utilities/payments',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER'],
+      },
+    ],
   },
   {
     label: 'Maintenance Schedules',
@@ -222,8 +270,40 @@ export const menuItems: MenuItem[] = [
   {
     label: 'Parking',
     icon: Car,
-    path: '/org/parking',
-    roles: ['SECURITY'],
+    path: '/org/parking/spaces',
+    roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER', 'SECURITY'],
+    children: [
+      {
+        label: 'Parking Spaces',
+        icon: Car,
+        path: '/org/parking/spaces',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER', 'SECURITY'],
+      },
+      {
+        label: 'Tenant Parking',
+        icon: Car,
+        path: '/org/parking/tenants',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER', 'SECURITY'],
+      },
+      {
+        label: 'Visitor Parking',
+        icon: UserCheck,
+        path: '/org/parking/visitors',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER', 'SECURITY'],
+      },
+      {
+        label: 'Pricing',
+        icon: DollarSign,
+        path: '/org/parking/pricing',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'FACILITY_MANAGER'],
+      },
+      {
+        label: 'Revenue',
+        icon: TrendingUp,
+        path: '/org/parking/revenue',
+        roles: ['ORG_ADMIN', 'BUILDING_MANAGER', 'ACCOUNTANT'],
+      },
+    ],
   },
   {
     label: 'Access Logs',

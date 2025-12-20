@@ -88,7 +88,7 @@ export async function GET() {
           id: leaseDoc._id.toString(),
           type: 'lease',
           title: 'New Lease Created',
-          description: `Lease for tenant ${leaseDoc.tenantId} - Unit ${leaseDoc.unitId} - ETB ${leaseDoc.rentAmount.toLocaleString()}/month`,
+          description: `Lease for tenant ${leaseDoc.tenantId} - Unit ${leaseDoc.unitId} - ETB ${(leaseDoc.rentAmount || 0).toLocaleString()}/month`,
           timestamp: leaseDoc.createdAt || new Date(),
           link: `/org/leases/${leaseDoc._id}`,
         });

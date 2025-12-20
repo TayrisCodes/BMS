@@ -29,6 +29,13 @@ export interface Organization {
     companyName?: string | null; // Display name (can differ from legal name)
     tagline?: string | null;
   } | null;
+  // Payment reminder settings
+  paymentReminderSettings?: {
+    daysBeforeDue: number[]; // e.g., [7, 3, 0] - send reminders 7 days, 3 days, and on due date
+    daysAfterDue: number[]; // e.g., [3, 7, 14, 30] - send reminders 3, 7, 14, 30 days after due
+    escalationEnabled: boolean; // Enable daily reminders after due date
+    reminderChannels: ('in_app' | 'email' | 'sms')[]; // Channels to send reminders
+  } | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -304,4 +311,17 @@ export async function deleteOrganization(organizationId: string): Promise<boolea
   } catch {
     return false;
   }
+}
+
+export async function listOrganizations(filters?: {
+  status?: 'active' | 'inactive' | 'suspended';
+}): Promise<Organization[]> {
+  const collection = await getOrganizationsCollection();
+
+  const query: Record<string, unknown> = {};
+  if (filters?.status) {
+    query.status = filters.status;
+  }
+
+  return collection.find(query as Document).toArray();
 }

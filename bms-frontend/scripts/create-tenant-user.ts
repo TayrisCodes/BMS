@@ -2,7 +2,7 @@
 /**
  * Create user account for tenant
  * Usage: MONGODB_URI="your-connection-string" tsx scripts/create-tenant-user.ts
- * 
+ *
  * REQUIRED: MONGODB_URI environment variable must be set
  */
 
@@ -43,6 +43,9 @@ interface Tenant {
 async function createTenantUser() {
   console.log('🌱 Creating User Account for Tenant...\n');
 
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is required');
+  }
   const client = new MongoClient(MONGODB_URI);
 
   try {

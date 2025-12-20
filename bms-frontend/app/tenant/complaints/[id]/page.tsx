@@ -13,6 +13,10 @@ import {
   Clock,
   User,
   MessageSquare,
+  Wrench,
+  AlertTriangle,
+  Calendar,
+  ExternalLink,
 } from 'lucide-react';
 
 interface Complaint {
@@ -26,6 +30,15 @@ interface Complaint {
   assignedTo?: string | null;
   resolvedAt?: string | null;
   resolutionNotes?: string | null;
+  // Maintenance request fields
+  type?: 'complaint' | 'maintenance_request';
+  maintenanceCategory?: string | null;
+  urgency?: string | null;
+  preferredTimeWindow?: {
+    start: string;
+    end: string;
+  } | null;
+  linkedWorkOrderId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +119,31 @@ export default function ComplaintDetailPage() {
       other: 'Other',
     };
     return categories[category] || category;
+  };
+
+  const getMaintenanceCategoryLabel = (category: string) => {
+    const categories: Record<string, string> = {
+      plumbing: 'Plumbing',
+      electrical: 'Electrical',
+      hvac: 'HVAC',
+      appliance: 'Appliance',
+      structural: 'Structural',
+      other: 'Other',
+    };
+    return categories[category] || category;
+  };
+
+  const getUrgencyBadgeVariant = (urgency: string) => {
+    switch (urgency) {
+      case 'emergency':
+        return 'destructive';
+      case 'high':
+        return 'default';
+      case 'medium':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
   };
 
   const getCurrentStatusIndex = () => {
@@ -199,21 +237,49 @@ export default function ComplaintDetailPage() {
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <h2 className="text-xl font-bold">{complaint.title}</h2>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 flex-wrap">
+              {complaint.type === 'maintenance_request' && (
+                <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950">
+                  <Wrench className="h-3 w-3 mr-1" />
+                  Maintenance
+                </Badge>
+              )}
               <Badge variant={getStatusBadgeVariant(complaint.status)}>
                 {complaint.status.replace('_', ' ')}
               </Badge>
               <Badge variant={getPriorityBadgeVariant(complaint.priority)}>
                 {complaint.priority}
               </Badge>
+              {complaint.urgency && (
+                <Badge variant={getUrgencyBadgeVariant(complaint.urgency)}>
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {complaint.urgency}
+                </Badge>
+              )}
             </div>
           </div>
 
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Type:</span>
+              <span className="font-medium">
+                {complaint.type === 'maintenance_request'
+                  ? 'Maintenance Request'
+                  : 'General Complaint'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Category:</span>
               <span className="font-medium">{getCategoryLabel(complaint.category)}</span>
             </div>
+            {complaint.maintenanceCategory && (
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Maintenance Category:</span>
+                <span className="font-medium">
+                  {getMaintenanceCategoryLabel(complaint.maintenanceCategory)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Created:</span>
               <span className="font-medium">{new Date(complaint.createdAt).toLocaleString()}</span>
@@ -229,6 +295,81 @@ export default function ComplaintDetailPage() {
           </div>
         </div>
       </MobileCard>
+
+      {/* Maintenance Request Details */}
+      {complaint.type === 'maintenance_request' && (
+        <MobileCard>
+          <div className="space-y-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Maintenance Request Details
+            </h3>
+            <div className="space-y-3">
+              {complaint.maintenanceCategory && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Category:</span>
+                  <span className="font-medium">
+                    {getMaintenanceCategoryLabel(complaint.maintenanceCategory)}
+                  </span>
+                </div>
+              )}
+              {complaint.urgency && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Urgency:</span>
+                  <Badge variant={getUrgencyBadgeVariant(complaint.urgency)}>
+                    {complaint.urgency.charAt(0).toUpperCase() + complaint.urgency.slice(1)}
+                  </Badge>
+                </div>
+              )}
+              {complaint.preferredTimeWindow && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>Preferred Time Window:</span>
+                  </div>
+                  <div className="pl-6 space-y-1 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Start: </span>
+                      <span className="font-medium">
+                        {new Date(complaint.preferredTimeWindow.start).toLocaleString()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">End: </span>
+                      <span className="font-medium">
+                        {new Date(complaint.preferredTimeWindow.end).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </MobileCard>
+      )}
+
+      {/* Linked Work Order */}
+      {complaint.linkedWorkOrderId && (
+        <MobileCard>
+          <div className="space-y-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Wrench className="h-5 w-5" />
+              Work Order
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              This maintenance request has been converted to a work order.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => router.push(`/tenant/maintenance/${complaint.linkedWorkOrderId}`)}
+            >
+              View Work Order
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </MobileCard>
+      )}
 
       {/* Description */}
       <MobileCard>

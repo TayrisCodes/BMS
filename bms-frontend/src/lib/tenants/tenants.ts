@@ -10,8 +10,16 @@ export interface NotificationPreferences {
   emailEnabled: boolean;
   smsEnabled: boolean;
   inAppEnabled: boolean;
+  pushEnabled?: boolean;
   emailTypes: string[]; // Notification types to receive via email
   smsTypes: string[]; // Notification types to receive via SMS
+  pushTypes?: string[]; // Notification types to receive via push
+  quietHoursEnabled?: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
+  doNotDisturbEnabled?: boolean;
+  doNotDisturbUntil?: Date | null;
+  preferredLanguage?: string;
 }
 
 export interface Tenant {
@@ -30,6 +38,7 @@ export interface Tenant {
   } | null;
   notes?: string | null;
   notificationPreferences?: NotificationPreferences | null;
+  pushSubscription?: any | null; // Web Push subscription object
   createdAt: Date;
   updatedAt: Date;
 }

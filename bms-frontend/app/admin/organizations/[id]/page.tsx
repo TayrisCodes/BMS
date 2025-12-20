@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/lib/components/ui/button';
@@ -118,7 +118,7 @@ export default function OrganizationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
 
-  async function fetchOrganization() {
+  const fetchOrganization = useCallback(async () => {
     if (!organizationId) return;
 
     try {
@@ -140,11 +140,11 @@ export default function OrganizationDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [organizationId]);
 
   useEffect(() => {
     fetchOrganization();
-  }, [organizationId]);
+  }, [fetchOrganization]);
 
   async function handleDelete() {
     if (
@@ -492,9 +492,7 @@ export default function OrganizationDetailPage() {
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Subdomain</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="font-mono text-sm">
-                      {organization.subdomain}.bms.com
-                    </p>
+                    <p className="font-mono text-sm">{organization.subdomain}.bms.com</p>
                     <a
                       href={`https://${organization.subdomain}.bms.com`}
                       target="_blank"
@@ -553,7 +551,9 @@ export default function OrganizationDetailPage() {
               )}
               {organization.branding.secondaryColor && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Secondary Color</label>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Secondary Color
+                  </label>
                   <div className="flex items-center gap-2 mt-1">
                     <div
                       className="w-8 h-8 rounded border"
@@ -589,9 +589,7 @@ export default function OrganizationDetailPage() {
                 <Shield className="h-5 w-5 text-primary" />
                 <div>
                   <CardTitle>Organization Admin Users</CardTitle>
-                  <CardDescription>
-                    Users with ORG_ADMIN role for this organization
-                  </CardDescription>
+                  <CardDescription>Users with ORG_ADMIN role for this organization</CardDescription>
                 </div>
               </div>
               <Link href="/admin/users">

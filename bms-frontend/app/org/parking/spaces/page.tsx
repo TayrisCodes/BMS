@@ -15,7 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/lib/components/ui/select';
-import { ParkingSquare, CheckCircle2, XCircle, AlertCircle, Filter, Plus } from 'lucide-react';
+import {
+  ParkingSquare,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Filter,
+  Plus,
+  Car,
+  UserCheck,
+} from 'lucide-react';
 import type { ParkingSpaceType, ParkingSpaceStatus } from '@/lib/parking/parking-spaces';
 
 interface ParkingSpace extends Record<string, unknown> {
@@ -193,6 +202,40 @@ export default function ParkingSpacesPage() {
             <Badge variant="outline">Assigned</Badge>
           ) : (
             <span className="text-muted-foreground">—</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (space: ParkingSpace) => (
+        <div className="flex items-center gap-2">
+          {space.status === 'available' && space.spaceType === 'tenant' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/org/parking/tenants/assign?spaceId=${space._id}`);
+              }}
+            >
+              <Car className="h-3 w-3 mr-1" />
+              Assign to Tenant
+            </Button>
+          )}
+          {space.status === 'available' && space.spaceType === 'visitor' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/org/parking/visitors/assign?spaceId=${space._id}`);
+              }}
+            >
+              <UserCheck className="h-3 w-3 mr-1" />
+              Assign to Visitor
+            </Button>
           )}
         </div>
       ),

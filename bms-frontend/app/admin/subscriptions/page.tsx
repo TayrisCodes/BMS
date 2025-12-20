@@ -53,6 +53,7 @@ interface Subscription {
   endDate?: string | Date | null;
   nextBillingDate?: string | Date | null;
   autoRenew: boolean;
+  features: string[];
   createdAt: string | Date;
   updatedAt: string | Date;
 }
@@ -131,7 +132,7 @@ export default function SubscriptionsPage() {
         ]);
 
         setSubscriptions(subscriptionsData.subscriptions || []);
-        setPagination(subscriptionsData.pagination || pagination);
+        setPagination((prev) => subscriptionsData.pagination || prev);
         setStats(statsData.stats || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load subscriptions');
@@ -478,8 +479,3 @@ export default function SubscriptionsPage() {
     </DashboardPage>
   );
 }
-
-
-
-
-

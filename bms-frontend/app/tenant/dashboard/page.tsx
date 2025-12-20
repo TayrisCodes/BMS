@@ -18,10 +18,15 @@ import {
   CreditCard,
   RefreshCw,
   AlertCircle,
+  Wrench,
+  Clock,
+  Activity,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface DashboardData {
   balance: number;
+  overdueAmount?: number;
   nextInvoice?: {
     id: string;
     number: string;
@@ -39,6 +44,36 @@ interface DashboardData {
     dueDate: string;
     status: string;
   }>;
+  maintenanceRequestsSummary?: {
+    total: number;
+    open: number;
+    urgent: number;
+    recentUpdates: Array<{
+      id: string;
+      title: string;
+      status: string;
+      urgency: string | null;
+      updatedAt: string;
+    }>;
+  };
+  leaseExpirationInfo?: {
+    endDate: string;
+    daysUntilExpiry: number;
+    renewalNoticeDays: number;
+    needsRenewal: boolean;
+  } | null;
+  recentActivity?: Array<{
+    type: string;
+    title: string;
+    description: string;
+    timestamp: string;
+    link?: string;
+  }>;
+  paymentTrend?: {
+    totalPayments: number;
+    onTimePayments: number;
+    onTimeRate: number;
+  };
 }
 
 // Loading skeleton component
@@ -200,8 +235,16 @@ export default function TenantDashboardPage() {
       {/* Balance Card - Prominent */}
       <MobileCard title="Current Balance" onClick={() => router.push('/tenant/payments')}>
         <div className="space-y-4">
-          <div className="text-4xl font-bold text-primary">
-            {formatCurrency(data?.balance || 0)}
+          <div className="space-y-2">
+            <div className="text-4xl font-bold text-primary">
+              {formatCurrency(data?.balance || 0)}
+            </div>
+            {data?.overdueAmount && data.overdueAmount > 0 && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <span>Overdue: {formatCurrency(data.overdueAmount)}</span>
+              </div>
+            )}
           </div>
           <Button
             className="w-full h-12 text-base font-medium"
@@ -214,6 +257,75 @@ export default function TenantDashboardPage() {
           </Button>
         </div>
       </MobileCard>
+
+      {/* Lease Expiration Warning */}
+      {data?.leaseExpirationInfo && data.leaseExpirationInfo.needsRenewal && (
+        <MobileCard className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <h3 className="font-semibold text-orange-900 dark:text-orange-100">
+                Lease Expiring Soon
+              </h3>
+            </div>
+            <p className="text-sm text-orange-800 dark:text-orange-200">
+              Your lease expires in {data.leaseExpirationInfo.daysUntilExpiry} days on{' '}
+              {new Date(data.leaseExpirationInfo.endDate).toLocaleDateString()}
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-orange-500 text-orange-700 dark:text-orange-300"
+              onClick={() => router.push('/tenant/lease')}
+            >
+              View Lease Details
+            </Button>
+          </div>
+        </MobileCard>
+      )}
+
+      {/* Maintenance Requests Summary */}
+      {data?.maintenanceRequestsSummary && data.maintenanceRequestsSummary.open > 0 && (
+        <MobileCard onClick={() => router.push('/tenant/complaints?type=maintenance_request')}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wrench className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Maintenance Requests</h3>
+              </div>
+              <Badge variant="outline">{data.maintenanceRequestsSummary.open} Open</Badge>
+            </div>
+            {data.maintenanceRequestsSummary.urgent > 0 && (
+              <div className="flex items-center gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <span>{data.maintenanceRequestsSummary.urgent} urgent request(s)</span>
+              </div>
+            )}
+            {data.maintenanceRequestsSummary.recentUpdates.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                {data.maintenanceRequestsSummary.recentUpdates.map((update) => (
+                  <div key={update.id} className="text-sm">
+                    <div className="font-medium">{update.title}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {update.status.replace('_', ' ')} •{' '}
+                      {new Date(update.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push('/tenant/complaints/new?type=maintenance_request');
+              }}
+            >
+              Submit New Request
+            </Button>
+          </div>
+        </MobileCard>
+      )}
 
       {/* Next Invoice Card */}
       {data?.nextInvoice && (
@@ -260,10 +372,25 @@ export default function TenantDashboardPage() {
             <div className="text-sm font-medium">Submit Complaint</div>
           </div>
         </MobileCard>
+        <MobileCard
+          className="text-center"
+          onClick={() => router.push('/tenant/complaints/new?type=maintenance_request')}
+        >
+          <div className="space-y-2">
+            <Wrench className="h-8 w-8 mx-auto text-primary" />
+            <div className="text-sm font-medium">Maintenance Request</div>
+          </div>
+        </MobileCard>
         <MobileCard className="text-center" onClick={() => router.push('/tenant/lease')}>
           <div className="space-y-2">
             <FileText className="h-8 w-8 mx-auto text-primary" />
             <div className="text-sm font-medium">View Lease</div>
+          </div>
+        </MobileCard>
+        <MobileCard className="text-center" onClick={() => router.push('/tenant/visitor-qr-codes')}>
+          <div className="space-y-2">
+            <FileText className="h-8 w-8 mx-auto text-primary" />
+            <div className="text-sm font-medium">Visitor QR Codes</div>
           </div>
         </MobileCard>
       </div>
@@ -274,6 +401,11 @@ export default function TenantDashboardPage() {
           <TrendingUp className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
           <div className="text-xl font-bold">{formatCurrency(data?.totalPaidThisMonth || 0)}</div>
           <div className="text-xs text-muted-foreground">Paid This Month</div>
+          {data?.paymentTrend && data.paymentTrend.totalPayments > 0 && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {Math.round(data.paymentTrend.onTimeRate * 100)}% on time
+            </div>
+          )}
         </MobileCard>
         <MobileCard className="text-center py-4">
           <Receipt className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
@@ -284,8 +416,45 @@ export default function TenantDashboardPage() {
           <MessageSquare className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
           <div className="text-xl font-bold">{data?.complaintsCount || 0}</div>
           <div className="text-xs text-muted-foreground">Complaints</div>
+          {data?.maintenanceRequestsSummary && data.maintenanceRequestsSummary.open > 0 && (
+            <div className="text-xs text-primary mt-1">
+              {data.maintenanceRequestsSummary.open} maintenance
+            </div>
+          )}
         </MobileCard>
       </div>
+
+      {/* Recent Activity Feed */}
+      {data?.recentActivity && data.recentActivity.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Recent Activity
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {data.recentActivity.map((activity, index) => (
+              <MobileCard
+                key={index}
+                onClick={() => activity.link && router.push(activity.link)}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm">{activity.title}</div>
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                  <div className="text-sm text-muted-foreground">{activity.description}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(activity.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              </MobileCard>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Invoices */}
       <div className="space-y-3">

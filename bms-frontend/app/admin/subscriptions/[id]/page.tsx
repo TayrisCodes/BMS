@@ -15,6 +15,7 @@ import { Badge } from '@/lib/components/ui/badge';
 import { Separator } from '@/lib/components/ui/separator';
 import { apiGet } from '@/lib/utils/api-client';
 import { SubscriptionModal } from '@/lib/components/subscriptions/SubscriptionModal';
+import type { SubscriptionTier, SubscriptionStatus, BillingCycle } from '@/lib/subscriptions/types';
 import {
   CreditCard,
   ArrowLeft,
@@ -37,9 +38,9 @@ interface Subscription {
   id: string;
   _id: string;
   organizationId: string;
-  tier: string;
-  status: string;
-  billingCycle: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  billingCycle: BillingCycle;
   basePrice?: number;
   discountType?: 'percentage' | 'fixed' | null;
   discountValue?: number | null;

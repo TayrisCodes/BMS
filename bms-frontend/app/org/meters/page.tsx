@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/lib/components/ui/select';
-import { Gauge, Plus, Filter, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Gauge, Plus, Filter, CheckCircle2, XCircle, AlertTriangle, Receipt } from 'lucide-react';
+import Link from 'next/link';
 import type { MeterType, MeterStatus } from '@/lib/meters/meters';
 
 interface Meter {
@@ -345,10 +346,18 @@ export default function MetersPage() {
           </Select>
         </div>
 
-        <Button onClick={() => router.push('/org/meters/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Register Meter
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/org/utilities/payments">
+            <Button variant="outline">
+              <Receipt className="h-4 w-4 mr-2" />
+              Utility Payments
+            </Button>
+          </Link>
+          <Button onClick={() => router.push('/org/meters/new')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Register Meter
+          </Button>
+        </div>
       </div>
 
       {/* Meters Table */}

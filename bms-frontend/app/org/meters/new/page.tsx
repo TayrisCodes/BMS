@@ -44,7 +44,7 @@ export default function NewMeterPage() {
 
   // Form state
   const [buildingId, setBuildingId] = useState<string>('');
-  const [unitId, setUnitId] = useState<string>('');
+  const [unitId, setUnitId] = useState<string>('__none__');
   const [meterNumber, setMeterNumber] = useState<string>('');
   const [meterType, setMeterType] = useState<MeterType>('electricity');
   const [unit, setUnit] = useState<MeterUnit>('kwh');
@@ -60,7 +60,7 @@ export default function NewMeterPage() {
       fetchUnits(buildingId);
     } else {
       setUnits([]);
-      setUnitId('');
+      setUnitId('__none__');
     }
   }, [buildingId]);
 
@@ -109,7 +109,7 @@ export default function NewMeterPage() {
 
       const meterData = {
         buildingId,
-        unitId: unitId || null,
+        unitId: unitId === '__none__' ? null : unitId,
         assetId: null, // Asset selection not implemented yet
         meterType,
         meterNumber: meterNumber.trim(),
@@ -203,7 +203,7 @@ export default function NewMeterPage() {
                       <SelectValue placeholder="Select a unit (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None (Building-level meter)</SelectItem>
+                      <SelectItem value="__none__">None (Building-level meter)</SelectItem>
                       {units.map((unit) => (
                         <SelectItem key={unit._id} value={unit._id}>
                           {unit.unitNumber}

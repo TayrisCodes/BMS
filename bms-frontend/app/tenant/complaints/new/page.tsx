@@ -16,6 +16,22 @@ const COMPLAINT_CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
+const MAINTENANCE_CATEGORIES = [
+  { value: 'plumbing', label: 'Plumbing', hint: 'Leaks, clogged drains, water issues' },
+  { value: 'electrical', label: 'Electrical', hint: 'Power outages, faulty wiring, outlets' },
+  { value: 'hvac', label: 'HVAC', hint: 'Heating, cooling, ventilation issues' },
+  { value: 'appliance', label: 'Appliance', hint: 'Refrigerator, stove, dishwasher problems' },
+  { value: 'structural', label: 'Structural', hint: 'Walls, floors, ceilings, doors, windows' },
+  { value: 'other', label: 'Other', hint: 'Other maintenance issues' },
+];
+
+const URGENCY_LEVELS = [
+  { value: 'low', label: 'Low', description: 'Can wait a few days' },
+  { value: 'medium', label: 'Medium', description: 'Should be addressed soon' },
+  { value: 'high', label: 'High', description: 'Needs attention today' },
+  { value: 'emergency', label: 'Emergency', description: 'Immediate attention required' },
+];
+
 const MAX_PHOTOS = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -27,9 +43,14 @@ export default function NewComplaintPage() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
+    type: 'complaint' as 'complaint' | 'maintenance_request',
     category: '',
     title: '',
     description: '',
+    maintenanceCategory: '',
+    urgency: '',
+    preferredTimeWindowStart: '',
+    preferredTimeWindowEnd: '',
   });
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
@@ -130,6 +151,26 @@ export default function NewComplaintPage() {
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
+    // Maintenance request specific validation
+    if (formData.type === 'maintenance_request') {
+      if (!formData.maintenanceCategory) {
+        newErrors.maintenanceCategory = 'Maintenance category is required';
+      }
+      if (!formData.urgency) {
+        newErrors.urgency = 'Urgency level is required';
+      }
+      // Validate time window if provided
+      if (formData.preferredTimeWindowStart && formData.preferredTimeWindowEnd) {
+        const start = new Date(formData.preferredTimeWindowStart);
+        const end = new Date(formData.preferredTimeWindowEnd);
+        if (end <= start) {
+          newErrors.preferredTimeWindow = 'End time must be after start time';
+        }
+        if (start < new Date()) {
+          newErrors.preferredTimeWindow = 'Start time must be in the future';
+        }
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -152,10 +193,25 @@ export default function NewComplaintPage() {
         return;
       }
 
-      const complaintData = {
-        ...formData,
+      const complaintData: Record<string, unknown> = {
+        category: formData.category,
+        title: formData.title,
+        description: formData.description,
         photos: uploadedPhotoUrls,
+        type: formData.type,
       };
+
+      // Add maintenance request specific fields
+      if (formData.type === 'maintenance_request') {
+        complaintData.maintenanceCategory = formData.maintenanceCategory;
+        complaintData.urgency = formData.urgency;
+        if (formData.preferredTimeWindowStart && formData.preferredTimeWindowEnd) {
+          complaintData.preferredTimeWindow = {
+            start: new Date(formData.preferredTimeWindowStart).toISOString(),
+            end: new Date(formData.preferredTimeWindowEnd).toISOString(),
+          };
+        }
+      }
 
       // If offline, queue the complaint
       if (!isOnline) {
@@ -219,6 +275,36 @@ export default function NewComplaintPage() {
       </div>
 
       <MobileForm onSubmit={handleSubmit} isLoading={loading} submitLabel="Submit Complaint">
+        {/* Type Selector */}
+        <div className="space-y-2">
+          <label htmlFor="type" className="text-base font-medium">
+            Type <span className="text-destructive">*</span>
+          </label>
+          <select
+            id="type"
+            name="type"
+            value={formData.type}
+            onChange={(e) => {
+              const newType = e.target.value as 'complaint' | 'maintenance_request';
+              setFormData({
+                ...formData,
+                type: newType,
+                // Reset maintenance-specific fields when switching types
+                maintenanceCategory:
+                  newType === 'maintenance_request' ? formData.maintenanceCategory : '',
+                urgency: newType === 'maintenance_request' ? formData.urgency : '',
+                preferredTimeWindowStart: '',
+                preferredTimeWindowEnd: '',
+              });
+            }}
+            className="flex h-12 w-full rounded-md border border-input bg-background px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            required
+          >
+            <option value="complaint">General Complaint</option>
+            <option value="maintenance_request">Maintenance Request</option>
+          </select>
+        </div>
+
         <div className="space-y-2">
           <label htmlFor="category" className="text-base font-medium">
             Category <span className="text-destructive">*</span>
@@ -240,6 +326,110 @@ export default function NewComplaintPage() {
           </select>
           {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
         </div>
+
+        {/* Maintenance Request Specific Fields */}
+        {formData.type === 'maintenance_request' && (
+          <>
+            <div className="space-y-2">
+              <label htmlFor="maintenanceCategory" className="text-base font-medium">
+                Maintenance Category <span className="text-destructive">*</span>
+              </label>
+              <select
+                id="maintenanceCategory"
+                name="maintenanceCategory"
+                value={formData.maintenanceCategory}
+                onChange={(e) => setFormData({ ...formData, maintenanceCategory: e.target.value })}
+                className="flex h-12 w-full rounded-md border border-input bg-background px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
+              >
+                <option value="">Select maintenance category</option>
+                {MAINTENANCE_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+              {formData.maintenanceCategory && (
+                <p className="text-xs text-muted-foreground">
+                  {
+                    MAINTENANCE_CATEGORIES.find((c) => c.value === formData.maintenanceCategory)
+                      ?.hint
+                  }
+                </p>
+              )}
+              {errors.maintenanceCategory && (
+                <p className="text-sm text-destructive">{errors.maintenanceCategory}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="urgency" className="text-base font-medium">
+                Urgency <span className="text-destructive">*</span>
+              </label>
+              <select
+                id="urgency"
+                name="urgency"
+                value={formData.urgency}
+                onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
+                className="flex h-12 w-full rounded-md border border-input bg-background px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
+              >
+                <option value="">Select urgency level</option>
+                {URGENCY_LEVELS.map((level) => (
+                  <option key={level.value} value={level.value}>
+                    {level.label} - {level.description}
+                  </option>
+                ))}
+              </select>
+              {errors.urgency && <p className="text-sm text-destructive">{errors.urgency}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-base font-medium">Preferred Time Window (Optional)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label
+                    htmlFor="preferredTimeWindowStart"
+                    className="text-sm text-muted-foreground"
+                  >
+                    Start
+                  </label>
+                  <input
+                    id="preferredTimeWindowStart"
+                    name="preferredTimeWindowStart"
+                    type="datetime-local"
+                    value={formData.preferredTimeWindowStart}
+                    onChange={(e) =>
+                      setFormData({ ...formData, preferredTimeWindowStart: e.target.value })
+                    }
+                    className="flex h-12 w-full rounded-md border border-input bg-background px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="preferredTimeWindowEnd" className="text-sm text-muted-foreground">
+                    End
+                  </label>
+                  <input
+                    id="preferredTimeWindowEnd"
+                    name="preferredTimeWindowEnd"
+                    type="datetime-local"
+                    value={formData.preferredTimeWindowEnd}
+                    onChange={(e) =>
+                      setFormData({ ...formData, preferredTimeWindowEnd: e.target.value })
+                    }
+                    className="flex h-12 w-full rounded-md border border-input bg-background px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Let us know when you&apos;re available for maintenance work
+              </p>
+              {errors.preferredTimeWindow && (
+                <p className="text-sm text-destructive">{errors.preferredTimeWindow}</p>
+              )}
+            </div>
+          </>
+        )}
 
         <MobileFormField
           label="Title"

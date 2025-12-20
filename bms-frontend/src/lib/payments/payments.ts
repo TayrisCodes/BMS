@@ -21,7 +21,7 @@ export interface Payment {
   organizationId: string;
   invoiceId?: string | null; // ObjectId ref to invoices (optional for manual payments)
   tenantId: string; // ObjectId ref to tenants
-  amount: number; // ETB
+  amount: number; // Amount in currency
   paymentMethod: PaymentMethod;
   paymentDate: Date;
   referenceNumber?: string | null; // External payment reference (for idempotency)
@@ -29,6 +29,15 @@ export interface Payment {
   providerResponse?: Record<string, unknown> | null; // Payment gateway response data
   notes?: string | null;
   createdBy?: string | null; // ObjectId ref to users
+  // New fields for enhanced payment tracking
+  currency?: string; // Currency code (default: 'ETB')
+  exchangeRate?: number | null; // Exchange rate at payment time (for USD payments)
+  providerTransactionId?: string | null; // Provider's transaction ID
+  reconciliationStatus?: 'pending' | 'reconciled' | 'disputed'; // Reconciliation status
+  failureReason?: string | null; // Reason for payment failure
+  retryAttempts?: number; // Number of retry attempts
+  lastRetryAt?: Date | null; // Last retry timestamp
+  receiptUrl?: string | null; // URL to generated receipt PDF
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,6 +73,23 @@ export async function ensurePaymentIndexes(db?: Db): Promise<void> {
       unique: true,
       sparse: true,
       name: 'unique_reference_number',
+    },
+    // Index on reconciliationStatus
+    {
+      key: { reconciliationStatus: 1 },
+      sparse: true,
+      name: 'reconciliationStatus',
+    },
+    // Index on providerTransactionId
+    {
+      key: { providerTransactionId: 1 },
+      sparse: true,
+      name: 'providerTransactionId',
+    },
+    // Compound index for reconciliation queries
+    {
+      key: { organizationId: 1, reconciliationStatus: 1, status: 1 },
+      name: 'org_reconciliation_status',
     },
   ];
 
@@ -138,6 +164,14 @@ export interface CreatePaymentInput {
   providerResponse?: Record<string, unknown> | null;
   notes?: string | null;
   createdBy?: string | null;
+  // New fields
+  currency?: string; // Default: 'ETB'
+  exchangeRate?: number | null;
+  providerTransactionId?: string | null;
+  reconciliationStatus?: 'pending' | 'reconciled' | 'disputed';
+  failureReason?: string | null;
+  retryAttempts?: number;
+  receiptUrl?: string | null;
 }
 
 export async function createPayment(input: CreatePaymentInput): Promise<Payment> {
@@ -202,6 +236,15 @@ export async function createPayment(input: CreatePaymentInput): Promise<Payment>
     providerResponse: input.providerResponse ?? null,
     notes: input.notes ?? null,
     createdBy: input.createdBy ?? null,
+    // New fields
+    currency: input.currency ?? 'ETB',
+    exchangeRate: input.exchangeRate ?? null,
+    providerTransactionId: input.providerTransactionId ?? null,
+    reconciliationStatus: input.reconciliationStatus ?? 'pending',
+    failureReason: input.failureReason ?? null,
+    retryAttempts: input.retryAttempts ?? 0,
+    lastRetryAt: null,
+    receiptUrl: input.receiptUrl ?? null,
     createdAt: now,
     updatedAt: now,
   };

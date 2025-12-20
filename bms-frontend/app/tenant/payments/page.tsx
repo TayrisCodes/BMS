@@ -6,7 +6,7 @@ import { MobileCard } from '@/lib/components/tenant/MobileCard';
 import { MobileList } from '@/lib/components/tenant/MobileList';
 import { BottomSheet } from '@/lib/components/ui/BottomSheet';
 import { Button } from '@/lib/components/ui/button';
-import { Download, ArrowRight, Loader2 } from 'lucide-react';
+import { Download, ArrowRight, Loader2, Filter, Calendar } from 'lucide-react';
 import { Badge } from '@/lib/components/ui/badge';
 import { MobileForm, MobileFormField } from '@/lib/components/tenant/MobileForm';
 import { ListItemSkeleton } from '@/lib/components/tenant/LoadingSkeleton';
@@ -35,17 +35,34 @@ export default function TenantPaymentsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentInstructions, setPaymentInstructions] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [dateRangeStart, setDateRangeStart] = useState<string>('');
+  const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
+  const [methodFilter, setMethodFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
 
   useEffect(() => {
     async function fetchPayments() {
       try {
         setLoading(true);
-        const response = await fetch('/api/tenant/payments');
+        const params = new URLSearchParams();
+        if (dateRangeStart) params.set('startDate', dateRangeStart);
+        if (dateRangeEnd) params.set('endDate', dateRangeEnd);
+        if (methodFilter) params.set('method', methodFilter);
+        if (statusFilter) params.set('status', statusFilter);
+
+        const url = params.toString()
+          ? `/api/tenant/payments?${params.toString()}`
+          : '/api/tenant/payments';
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          setPayments(data.payments || data || []);
+          const fetchedPayments = data.payments || data || [];
+          setPayments(fetchedPayments);
+          setFilteredPayments(fetchedPayments);
         } else {
           setPayments([]);
+          setFilteredPayments([]);
         }
       } catch (error) {
         console.error('Failed to fetch payments:', error);
@@ -67,7 +84,7 @@ export default function TenantPaymentsPage() {
         fetchInvoiceDetails(invoiceId);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, dateRangeStart, dateRangeEnd, methodFilter, statusFilter]);
 
   async function fetchInvoiceDetails(invoiceId: string) {
     try {
@@ -327,8 +344,136 @@ export default function TenantPaymentsPage() {
       </BottomSheet>
 
       {/* Payment History */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold">Payment History</h2>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Payment History</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              try {
+                const params = new URLSearchParams();
+                if (dateRangeStart) params.set('startDate', dateRangeStart);
+                if (dateRangeEnd) params.set('endDate', dateRangeEnd);
+                if (methodFilter) params.set('method', methodFilter);
+                if (statusFilter) params.set('status', statusFilter);
+                params.set('format', 'csv');
+
+                const response = await fetch(`/api/tenant/payments/export?${params.toString()}`);
+                if (response.ok) {
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `payments-${new Date().toISOString().split('T')[0]}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } else {
+                  alert('Failed to export payments. Please try again.');
+                }
+              } catch (error) {
+                console.error('Export error:', error);
+                alert('Failed to export payments. Please try again.');
+              }
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Filter className="h-4 w-4" />
+            <span>Filters</span>
+          </div>
+
+          {/* Date Range */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label htmlFor="dateStart" className="text-xs text-muted-foreground">
+                Start Date
+              </label>
+              <input
+                id="dateStart"
+                type="date"
+                value={dateRangeStart}
+                onChange={(e) => setDateRangeStart(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="dateEnd" className="text-xs text-muted-foreground">
+                End Date
+              </label>
+              <input
+                id="dateEnd"
+                type="date"
+                value={dateRangeEnd}
+                onChange={(e) => setDateRangeEnd(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Method and Status Filters */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label htmlFor="methodFilter" className="text-xs text-muted-foreground">
+                Payment Method
+              </label>
+              <select
+                id="methodFilter"
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">All Methods</option>
+                <option value="telebirr">Telebirr</option>
+                <option value="cbe_birr">CBE Birr</option>
+                <option value="chapa">Chapa</option>
+                <option value="hellocash">HelloCash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="statusFilter" className="text-xs text-muted-foreground">
+                Status
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Clear Filters */}
+          {(dateRangeStart || dateRangeEnd || methodFilter || statusFilter) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setDateRangeStart('');
+                setDateRangeEnd('');
+                setMethodFilter('');
+                setStatusFilter('');
+              }}
+              className="w-full"
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
         {loading ? (
           <div className="space-y-0">
             {[1, 2, 3].map((i) => (
@@ -337,9 +482,13 @@ export default function TenantPaymentsPage() {
           </div>
         ) : (
           <MobileList
-            items={payments}
+            items={filteredPayments}
             loading={false}
-            emptyMessage="No payments yet"
+            emptyMessage={
+              dateRangeStart || dateRangeEnd || methodFilter || statusFilter
+                ? 'No payments match your filters'
+                : 'No payments yet'
+            }
             renderItem={(payment) => (
               <MobileCard className="border-0 border-b rounded-none">
                 <div className="space-y-3">

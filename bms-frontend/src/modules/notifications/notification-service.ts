@@ -7,6 +7,7 @@ import {
 } from '@/lib/notifications/notifications';
 import { EmailProvider } from './providers/email';
 import { WhatsAppProvider } from './providers/whatsapp';
+import { pushNotificationProvider } from './providers/push';
 import { findTenantById } from '@/lib/tenants/tenants';
 import { findUserById } from '@/lib/auth/users';
 
@@ -103,14 +104,23 @@ export class NotificationService {
     emailEnabled: boolean;
     smsEnabled: boolean;
     inAppEnabled: boolean;
+    pushEnabled?: boolean;
     emailTypes: string[];
     smsTypes: string[];
+    pushTypes?: string[];
+    quietHoursEnabled?: boolean;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+    doNotDisturbEnabled?: boolean;
+    doNotDisturbUntil?: Date | null;
+    preferredLanguage?: string;
   } | null> {
     // Default preferences
     const defaultPreferences = {
       emailEnabled: true,
       smsEnabled: true,
       inAppEnabled: true,
+      pushEnabled: false,
       emailTypes: [
         'invoice_created',
         'payment_due',
@@ -119,6 +129,13 @@ export class NotificationService {
         'lease_expiring',
       ],
       smsTypes: ['invoice_created', 'payment_due', 'payment_received', 'work_order_assigned'],
+      pushTypes: ['visitor_arrived', 'payment_due', 'emergency'],
+      quietHoursEnabled: false,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '08:00',
+      doNotDisturbEnabled: false,
+      doNotDisturbUntil: null,
+      preferredLanguage: 'en',
     };
 
     // Get preferences from tenant if available
@@ -145,14 +162,16 @@ export class NotificationService {
    * Check if notification should be sent via a specific channel based on user preferences.
    */
   private shouldSendViaChannel(
-    channel: 'in_app' | 'email' | 'sms',
+    channel: 'in_app' | 'email' | 'sms' | 'push',
     notificationType: NotificationType,
     preferences: {
       emailEnabled: boolean;
       smsEnabled: boolean;
       inAppEnabled: boolean;
+      pushEnabled?: boolean;
       emailTypes: string[];
       smsTypes: string[];
+      pushTypes?: string[];
     },
   ): boolean {
     if (channel === 'in_app') {
@@ -181,11 +200,87 @@ export class NotificationService {
       return preferences.smsTypes.includes(notificationType);
     }
 
+    if (channel === 'push') {
+      if (!preferences.pushEnabled) {
+        return false;
+      }
+      // If pushTypes is empty, allow all types
+      if (!preferences.pushTypes || preferences.pushTypes.length === 0) {
+        return true;
+      }
+      return preferences.pushTypes.includes(notificationType);
+    }
+
     return false;
   }
 
   /**
-   * Send notification via configured channels (in-app, email, WhatsApp).
+   * Check if notification should be sent based on quiet hours and do-not-disturb.
+   */
+  private shouldSendNotification(
+    notification: Notification,
+    preferences: {
+      quietHoursEnabled?: boolean;
+      quietHoursStart?: string;
+      quietHoursEnd?: string;
+      doNotDisturbEnabled?: boolean;
+      doNotDisturbUntil?: Date | null;
+    } | null,
+  ): boolean {
+    if (!preferences) {
+      return true; // Default to sending if preferences not found
+    }
+
+    // Emergency alerts and urgent notices bypass quiet hours and do-not-disturb
+    const isEmergency =
+      notification.type === 'system' &&
+      notification.metadata &&
+      (notification.metadata.priority === 'urgent' ||
+        notification.metadata.priority === 'emergency');
+
+    if (isEmergency) {
+      return true;
+    }
+
+    // Check do-not-disturb
+    if (preferences.doNotDisturbEnabled && preferences.doNotDisturbUntil) {
+      const now = new Date();
+      if (now < new Date(preferences.doNotDisturbUntil)) {
+        return false; // Do not disturb is active
+      }
+    }
+
+    // Check quiet hours
+    if (preferences.quietHoursEnabled && preferences.quietHoursStart && preferences.quietHoursEnd) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTime = currentHour * 60 + currentMinute; // Time in minutes
+
+      const [startHour, startMinute] = preferences.quietHoursStart.split(':').map(Number);
+      const [endHour, endMinute] = preferences.quietHoursEnd.split(':').map(Number);
+      const startTime = startHour * 60 + startMinute;
+      const endTime = endHour * 60 + endMinute;
+
+      // Handle quiet hours that span midnight
+      if (startTime > endTime) {
+        // Quiet hours span midnight (e.g., 22:00 to 08:00)
+        if (currentTime >= startTime || currentTime < endTime) {
+          return false; // Within quiet hours
+        }
+      } else {
+        // Quiet hours within same day
+        if (currentTime >= startTime && currentTime < endTime) {
+          return false; // Within quiet hours
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Send notification via configured channels (in-app, email, WhatsApp, push).
    */
   async sendNotification(notification: Notification): Promise<void> {
     const collection = await getNotificationsCollection();
@@ -193,6 +288,16 @@ export class NotificationService {
 
     // Get user preferences
     const preferences = await this.getUserPreferences(notification.userId, notification.tenantId);
+
+    // Check if notification should be sent (quiet hours, do-not-disturb)
+    const shouldSend = this.shouldSendNotification(notification, preferences);
+    if (!shouldSend) {
+      // Still create the notification record, but mark as deferred
+      console.log(
+        `[NotificationService] Notification deferred due to quiet hours or do-not-disturb`,
+      );
+      return;
+    }
 
     // Send via in-app channel (check preferences)
     if (notification.channels.includes('in_app')) {
@@ -283,6 +388,20 @@ export class NotificationService {
                 (notification.metadata.complaintId as string) || '',
                 (notification.metadata.status as string) || '',
                 notification.metadata.message as string | undefined,
+              );
+              emailSubject = template.subject;
+              emailBody = template.body;
+              emailHtmlBody = template.htmlBody;
+            } else if (notification.type === 'visitor_arrived' && notification.metadata) {
+              const template = this.emailProvider.generateVisitorArrivedEmail(
+                (notification.metadata.visitorName as string) || '',
+                (notification.metadata.visitorPhone as string) || null,
+                (notification.metadata.buildingName as string) || '',
+                (notification.metadata.unitNumber as string) || null,
+                (notification.metadata.floor as number) || null,
+                notification.metadata.entryTime
+                  ? new Date(notification.metadata.entryTime as string)
+                  : new Date(),
               );
               emailSubject = template.subject;
               emailBody = template.body;
@@ -386,6 +505,17 @@ export class NotificationService {
                   ? new Date(notification.metadata.dueDate as string)
                   : undefined,
               );
+            } else if (notification.type === 'visitor_arrived' && notification.metadata) {
+              whatsappMessage = this.whatsappProvider.generateVisitorArrivedMessage(
+                (notification.metadata.visitorName as string) || '',
+                (notification.metadata.visitorPhone as string) || null,
+                (notification.metadata.buildingName as string) || '',
+                (notification.metadata.unitNumber as string) || null,
+                (notification.metadata.floor as number) || null,
+                notification.metadata.entryTime
+                  ? new Date(notification.metadata.entryTime as string)
+                  : new Date(),
+              );
             }
 
             const result = await this.whatsappProvider.sendWhatsApp(
@@ -416,6 +546,73 @@ export class NotificationService {
           updates.deliveryStatus = {
             ...(updates.deliveryStatus || notification.deliveryStatus),
             sms: {
+              sent: true,
+              delivered: false,
+              error: errorMessage,
+            },
+          };
+        }
+      }
+    }
+
+    // Send via push notification - check preferences
+    if (notification.channels.includes('push') && notification.deliveryStatus.push) {
+      const shouldSendPush = preferences
+        ? this.shouldSendViaChannel('push', notification.type, preferences)
+        : true; // Default to true if preferences not found
+
+      if (shouldSendPush && !notification.deliveryStatus.push.sent) {
+        try {
+          // Get push subscription from tenant or user
+          let subscription: any = null;
+
+          if (notification.tenantId) {
+            const tenant = await findTenantById(
+              notification.tenantId,
+              notification.organizationId || undefined,
+            );
+            subscription = tenant?.pushSubscription || null;
+          } else if (notification.userId) {
+            const user = await findUserById(notification.userId);
+            subscription = user?.pushSubscription || null;
+          }
+
+          if (subscription && pushNotificationProvider.validateSubscription(subscription)) {
+            const result = await pushNotificationProvider.sendPushNotification(subscription, {
+              title: notification.title,
+              body: notification.message,
+              data: {
+                notificationId: notification._id,
+                type: notification.type,
+                link: notification.link || null,
+                ...notification.metadata,
+              },
+              tag: notification.type,
+            });
+
+            updates.deliveryStatus = {
+              ...(updates.deliveryStatus || notification.deliveryStatus),
+              push: {
+                sent: true,
+                delivered: result.success,
+                error: result.error || null,
+              },
+            };
+          } else {
+            updates.deliveryStatus = {
+              ...(updates.deliveryStatus || notification.deliveryStatus),
+              push: {
+                sent: true,
+                delivered: false,
+                error: 'Push subscription not found',
+              },
+            };
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          updates.deliveryStatus = {
+            ...(updates.deliveryStatus || notification.deliveryStatus),
+            push: {
               sent: true,
               delivered: false,
               error: errorMessage,

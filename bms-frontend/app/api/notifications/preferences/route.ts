@@ -21,6 +21,7 @@ export async function GET() {
       emailEnabled: true,
       smsEnabled: true,
       inAppEnabled: true,
+      pushEnabled: false,
       emailTypes: [
         'invoice_created',
         'payment_due',
@@ -29,6 +30,13 @@ export async function GET() {
         'lease_expiring',
       ],
       smsTypes: ['invoice_created', 'payment_due', 'payment_received', 'work_order_assigned'],
+      pushTypes: ['visitor_arrived', 'payment_due', 'emergency'],
+      quietHoursEnabled: false,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '08:00',
+      doNotDisturbEnabled: false,
+      doNotDisturbUntil: null,
+      preferredLanguage: 'en',
     };
 
     // Get preferences from tenant if user is a tenant
@@ -103,8 +111,16 @@ export async function PATCH(request: NextRequest) {
       emailEnabled: body.emailEnabled ?? true,
       smsEnabled: body.smsEnabled ?? true,
       inAppEnabled: body.inAppEnabled ?? true,
+      pushEnabled: body.pushEnabled ?? false,
       emailTypes: Array.isArray(body.emailTypes) ? body.emailTypes : [],
       smsTypes: Array.isArray(body.smsTypes) ? body.smsTypes : [],
+      pushTypes: Array.isArray(body.pushTypes) ? body.pushTypes : [],
+      quietHoursEnabled: body.quietHoursEnabled ?? false,
+      quietHoursStart: body.quietHoursStart || '22:00',
+      quietHoursEnd: body.quietHoursEnd || '08:00',
+      doNotDisturbEnabled: body.doNotDisturbEnabled ?? false,
+      doNotDisturbUntil: body.doNotDisturbUntil ? new Date(body.doNotDisturbUntil) : null,
+      preferredLanguage: body.preferredLanguage || 'en',
     };
 
     const { ObjectId } = await import('mongodb');

@@ -4,6 +4,7 @@ import {
   updatePaymentIntent,
 } from '@/modules/payments/payment-intent';
 import { getPaymentProvider } from '@/modules/payments/providers';
+import { ChapaProvider } from '@/modules/payments/providers/chapa';
 import { createPayment } from '@/lib/payments/payments';
 import { findInvoiceById, updateInvoice } from '@/lib/invoices/invoices';
 
@@ -28,13 +29,6 @@ interface RouteParams {
 export async function POST(request: Request, routeParams: RouteParams) {
   try {
     const { provider } = await routeParams.params;
-    const body = await request.json();
-
-    console.log(`[Webhook] Received payment callback from ${provider}:`, {
-      provider,
-      body: JSON.stringify(body),
-      timestamp: new Date().toISOString(),
-    });
 
     // Validate provider
     const validProviders = ['telebirr', 'cbe_birr', 'chapa', 'hellocash', 'bank_transfer'];
@@ -42,10 +36,58 @@ export async function POST(request: Request, routeParams: RouteParams) {
       return NextResponse.json({ error: `Invalid payment provider: ${provider}` }, { status: 400 });
     }
 
+    // For Chapa, we need to read raw body for signature verification
+    let body: any;
+    let rawBody: string | null = null;
+
+    if (provider === 'chapa') {
+      // Read raw body for signature verification
+      rawBody = await request.text();
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+      }
+
+      // Verify Chapa webhook signature
+      const signature =
+        request.headers.get('x-chapa-signature') || request.headers.get('X-Chapa-Signature');
+      if (signature) {
+        const chapaProvider = new ChapaProvider();
+        const webhookSecret = process.env.CHAPA_WEBHOOK_SECRET || process.env.CHAPA_SECRET_KEY;
+
+        if (webhookSecret) {
+          const isValid = chapaProvider.verifyWebhookSignature(rawBody, signature, webhookSecret);
+
+          if (!isValid) {
+            console.error('[Webhook] Invalid Chapa webhook signature');
+            return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 401 });
+          }
+        }
+      }
+    } else {
+      // For other providers, read as JSON
+      body = await request.json();
+    }
+
+    console.log(`[Webhook] Received payment callback from ${provider}:`, {
+      provider,
+      body: JSON.stringify(body),
+      timestamp: new Date().toISOString(),
+    });
+
     // Extract reference number from webhook payload
-    // This will vary by provider - adjust based on actual webhook format
-    const referenceNumber =
-      body.reference || body.transactionId || body.paymentReference || body.ref;
+    // Chapa uses 'tx_ref' in the webhook payload
+    let referenceNumber: string | null = null;
+
+    if (provider === 'chapa') {
+      // Chapa webhook format: { tx_ref, status, ... }
+      referenceNumber = body.tx_ref || body.reference || null;
+    } else {
+      // Other providers
+      referenceNumber =
+        body.reference || body.transactionId || body.paymentReference || body.ref || null;
+    }
 
     if (!referenceNumber) {
       return NextResponse.json(
@@ -54,18 +96,16 @@ export async function POST(request: Request, routeParams: RouteParams) {
       );
     }
 
-    // TODO: Verify webhook signature
-    // In production, verify the webhook signature using provider's secret key
-    // const isValid = verifyWebhookSignature(provider, body, request.headers);
-    // if (!isValid) {
-    //   return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
-    // }
-
     // Find payment intent by reference
+    // For Chapa, the reference (tx_ref) should be stored in referenceNumber field
     const intent = await findPaymentIntentByReference(referenceNumber);
 
     if (!intent) {
       console.warn(`[Webhook] Payment intent not found for reference: ${referenceNumber}`);
+      // For Chapa, log the full payload for debugging
+      if (provider === 'chapa') {
+        console.log('[Webhook] Chapa webhook payload:', JSON.stringify(body, null, 2));
+      }
       return NextResponse.json({ error: 'Payment intent not found' }, { status: 404 });
     }
 
@@ -132,16 +172,51 @@ export async function POST(request: Request, routeParams: RouteParams) {
         provider: intent.provider,
         webhookPayload: body,
       },
+      providerTransactionId: verificationResult.transactionId || null,
+      currency: intent.currency || 'ETB',
+    });
+
+    // Generate receipt URL
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL || process.env.NEXT_PUBLIC_APP_URL}`
+        : 'http://localhost:3000';
+    const receiptUrl = `${baseUrl}/api/payments/${payment._id}/receipt`;
+
+    // Update payment with receipt URL
+    const { updatePayment } = await import('@/lib/payments/payments');
+    await updatePayment(payment._id, {
+      receiptUrl,
+    }).catch((error) => {
+      console.error('[Webhook] Failed to update payment with receipt URL:', error);
+      // Don't fail the webhook if receipt URL update fails
     });
 
     // Note: Invoice status update is handled automatically by createPayment function
     // when payment status is "completed" and total paid >= invoice total
 
-    // TODO: Send notification to tenant
-    // await sendNotification(intent.tenantId, {
-    //   type: "payment_completed",
-    //   message: `Payment of ${intent.currency} ${payment.amount} completed successfully`,
-    // });
+    // Send notification to tenant
+    try {
+      const { notificationService } = await import('@/modules/notifications/notification-service');
+      await notificationService.createNotification({
+        organizationId: intent.organizationId,
+        tenantId: intent.tenantId,
+        type: 'payment_completed',
+        title: 'Payment Completed',
+        message: `Your payment of ${intent.currency || 'ETB'} ${payment.amount.toLocaleString()} has been processed successfully.`,
+        channels: ['in_app', 'email', 'sms'],
+        link: `/tenant/payments`,
+        metadata: {
+          paymentId: payment._id,
+          amount: payment.amount,
+          invoiceId: intent.invoiceId,
+          receiptUrl,
+        },
+      });
+    } catch (notifError) {
+      console.error('[Webhook] Failed to send payment notification:', notifError);
+      // Don't fail the webhook if notification fails
+    }
 
     console.log(`[Webhook] Payment processed successfully:`, {
       intentId: intent._id,

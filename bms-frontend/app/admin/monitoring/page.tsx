@@ -259,7 +259,3 @@ export default function MonitoringPage() {
   );
 }
 
-
-
-
-

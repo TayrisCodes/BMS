@@ -10,10 +10,7 @@ import { findUnitById } from '@/lib/units/units';
  * Get tenant history for a unit (current and previous tenants).
  * Requires units.read permission.
  */
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const context = await getAuthContextFromCookies();
 
@@ -109,8 +106,4 @@ export async function GET(
     );
   }
 }
-
-
-
-
 

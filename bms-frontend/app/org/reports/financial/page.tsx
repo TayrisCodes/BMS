@@ -70,7 +70,7 @@ export default function FinancialReportsPage() {
   const [report, setReport] = useState<FinancialReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [buildings, setBuildings] = useState<Array<{ _id: string; name: string }>>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
+  const [selectedBuilding, setSelectedBuilding] = useState<string>('__all__');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [exporting, setExporting] = useState<{ csv: boolean; pdf: boolean }>({
@@ -99,7 +99,7 @@ export default function FinancialReportsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
       if (startDate) {
@@ -138,7 +138,7 @@ export default function FinancialReportsPage() {
     setExporting((prev) => ({ ...prev, csv: true }));
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
       if (startDate) {
@@ -180,7 +180,7 @@ export default function FinancialReportsPage() {
     setExporting((prev) => ({ ...prev, pdf: true }));
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
       if (startDate) {
@@ -270,7 +270,7 @@ export default function FinancialReportsPage() {
                   <SelectValue placeholder="All Buildings" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Buildings</SelectItem>
+                  <SelectItem value="__all__">All Buildings</SelectItem>
                   {buildings.map((building) => (
                     <SelectItem key={building._id} value={building._id}>
                       {building.name}

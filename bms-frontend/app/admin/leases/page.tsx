@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/lib/components/ui/button";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/lib/components/ui/button';
 import {
   Table,
   TableBody,
@@ -11,25 +11,31 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/lib/components/ui/table";
-import { Badge } from "@/lib/components/ui/badge";
+} from '@/lib/components/ui/table';
+import { Badge } from '@/lib/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/lib/components/ui/select";
-import { apiGet } from "@/lib/utils/api-client";
-import { FileText, Plus, Eye } from "lucide-react";
+} from '@/lib/components/ui/select';
+import { apiGet } from '@/lib/utils/api-client';
+import { FileText, Plus, Eye } from 'lucide-react';
 
 interface Lease {
   _id: string;
   tenantId: string;
   unitId: string;
+  buildingId?: string | null;
   startDate: string;
   endDate?: string | null;
-  rentAmount: number;
+  rentAmount?: number;
+  terms?: {
+    rent: number;
+    serviceCharges?: number | null;
+    deposit?: number | null;
+  };
   status: string;
 }
 
@@ -59,25 +65,21 @@ export default function LeasesPage() {
   const [buildings, setBuildings] = useState<Record<string, Building>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
     async function fetchData() {
       try {
         setIsLoading(true);
-        const leasesData = (await apiGet<{ leases: Lease[] }>(
-          "/api/leases",
-        )) as { leases: Lease[] };
+        const leasesData = (await apiGet<{ leases: Lease[] }>('/api/leases')) as {
+          leases: Lease[];
+        };
         setLeases(leasesData.leases || []);
         setFilteredLeases(leasesData.leases || []);
 
         // Fetch related data
-        const tenantIds = [
-          ...new Set(leasesData.leases?.map((l) => l.tenantId) || []),
-        ];
-        const unitIds = [
-          ...new Set(leasesData.leases?.map((l) => l.unitId) || []),
-        ];
+        const tenantIds = [...new Set(leasesData.leases?.map((l) => l.tenantId) || [])];
+        const unitIds = [...new Set(leasesData.leases?.map((l) => l.unitId) || [])];
 
         const tenantMap: Record<string, Tenant> = {};
         const unitMap: Record<string, Unit> = {};
@@ -85,9 +87,7 @@ export default function LeasesPage() {
 
         for (const tenantId of tenantIds) {
           try {
-            const tenantData = await apiGet<{ tenant: Tenant }>(
-              `/api/tenants/${tenantId}`,
-            );
+            const tenantData = await apiGet<{ tenant: Tenant }>(`/api/tenants/${tenantId}`);
             tenantMap[tenantId] = tenantData.tenant;
           } catch {
             // Tenant not found
@@ -114,7 +114,7 @@ export default function LeasesPage() {
         setUnits(unitMap);
         setBuildings(buildingMap);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load leases");
+        setError(err instanceof Error ? err.message : 'Failed to load leases');
       } finally {
         setIsLoading(false);
       }
@@ -126,7 +126,7 @@ export default function LeasesPage() {
   useEffect(() => {
     let filtered = leases;
 
-    if (statusFilter !== "all") {
+    if (statusFilter !== 'all') {
       filtered = filtered.filter((l) => l.status === statusFilter);
     }
 
@@ -161,11 +161,7 @@ export default function LeasesPage() {
         </Link>
       </div>
 
-      {error && (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{error}</div>}
 
       <div className="flex gap-4 items-center">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -201,8 +197,8 @@ export default function LeasesPage() {
                 <TableCell colSpan={7} className="text-center py-8">
                   <p className="text-muted-foreground">
                     {leases.length === 0
-                      ? "No leases found. Create your first lease."
-                      : "No leases match your filters."}
+                      ? 'No leases found. Create your first lease.'
+                      : 'No leases match your filters.'}
                   </p>
                 </TableCell>
               </TableRow>
@@ -214,35 +210,26 @@ export default function LeasesPage() {
                 return (
                   <TableRow key={lease._id}>
                     <TableCell className="font-medium">
-                      {tenant
-                        ? `${tenant.firstName} ${tenant.lastName}`
-                        : "N/A"}
+                      {tenant ? `${tenant.firstName} ${tenant.lastName}` : 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {building && unit
-                        ? `${building.name} - ${unit.unitNumber}`
-                        : "N/A"}
+                      {building && unit ? `${building.name} - ${unit.unitNumber}` : 'N/A'}
+                    </TableCell>
+                    <TableCell>{new Date(lease.startDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {lease.endDate ? new Date(lease.endDate).toLocaleDateString() : 'Ongoing'}
                     </TableCell>
                     <TableCell>
-                      {new Date(lease.startDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {lease.endDate
-                        ? new Date(lease.endDate).toLocaleDateString()
-                        : "Ongoing"}
-                    </TableCell>
-                    <TableCell>
-                      ETB {lease.rentAmount.toLocaleString()}
+                      ETB {(lease.rentAmount ?? lease.terms?.rent ?? 0).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          lease.status === "active"
-                            ? "default"
-                            : lease.status === "expired" ||
-                                lease.status === "terminated"
-                              ? "destructive"
-                              : "secondary"
+                          lease.status === 'active'
+                            ? 'default'
+                            : lease.status === 'expired' || lease.status === 'terminated'
+                              ? 'destructive'
+                              : 'secondary'
                         }
                       >
                         {lease.status}
@@ -265,44 +252,3 @@ export default function LeasesPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

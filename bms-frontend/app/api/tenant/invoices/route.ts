@@ -60,11 +60,16 @@ export async function GET(request: NextRequest) {
 
     const formattedInvoices = invoices.map((inv) => ({
       id: inv._id.toString(),
-      number: inv.number || inv._id.toString(),
-      amount: inv.amount || 0,
+      number: inv.invoiceNumber || inv.number || inv._id.toString(),
+      amount: inv.total || inv.amount || 0,
       dueDate: inv.dueDate || inv.createdAt,
       status: inv.status || 'pending',
       createdAt: inv.createdAt || new Date(),
+      subtotal: inv.subtotal,
+      tax: inv.tax,
+      vatRate: inv.vatRate,
+      netIncomeBeforeVat: inv.netIncomeBeforeVat,
+      netIncomeAfterVat: inv.netIncomeAfterVat,
     }));
 
     return NextResponse.json({ invoices: formattedInvoices });

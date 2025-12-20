@@ -23,6 +23,8 @@ export interface CreateInvitationInput {
   roles: UserRole[];
   invitedBy: string; // User ID of the inviter
   name?: string | null;
+  emailFrom?: string; // Custom email sender address
+  emailFromName?: string; // Custom email sender name
 }
 
 export interface InvitationResult {
@@ -109,6 +111,8 @@ export async function createInvitation(input: CreateInvitationInput): Promise<In
     organization,
     inviter,
     activationUrl,
+    emailFrom: input.emailFrom,
+    emailFromName: input.emailFromName,
   }).catch((error) => {
     console.error('[InvitationService] Failed to send invitation notification:', error);
     // Don't throw - invitation is created, notification can be retried
@@ -193,8 +197,10 @@ async function sendInvitationNotification(input: {
   organization: { name: string; code: string } | null;
   inviter: User | null;
   activationUrl: string;
+  emailFrom?: string;
+  emailFromName?: string;
 }): Promise<void> {
-  const { user, organization, inviter, activationUrl } = input;
+  const { user, organization, inviter, activationUrl, emailFrom, emailFromName } = input;
 
   const orgName = organization?.name || 'the organization';
   const inviterName = inviter?.name || inviter?.email || 'an administrator';
@@ -209,7 +215,7 @@ async function sendInvitationNotification(input: {
       activationUrl,
     });
 
-    await emailProvider.sendEmail(user.email, subject, body, htmlBody);
+    await emailProvider.sendEmail(user.email, subject, body, htmlBody, emailFrom, emailFromName);
   }
 
   // Send SMS/WhatsApp if phone is provided

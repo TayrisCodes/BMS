@@ -39,13 +39,24 @@ export async function GET(request: Request, routeParams: RouteParams) {
         _id: lease._id,
         tenantId: lease.tenantId,
         unitId: lease.unitId,
+        buildingId: lease.buildingId,
         startDate: lease.startDate,
         endDate: lease.endDate,
-        rentAmount: lease.rentAmount,
-        depositAmount: lease.depositAmount,
         billingCycle: lease.billingCycle,
         dueDay: lease.dueDay,
+        rentAmount: lease.rentAmount ?? lease.terms?.rent,
+        depositAmount: lease.depositAmount ?? lease.terms?.deposit,
+        terms: lease.terms,
         additionalCharges: lease.additionalCharges,
+        penaltyConfig: lease.penaltyConfig,
+        paymentDueDays: lease.paymentDueDays,
+        renewalNoticeDays: lease.renewalNoticeDays,
+        documents: lease.documents,
+        termsTemplateId: lease.termsTemplateId,
+        customTermsText: lease.customTermsText,
+        termsAccepted: lease.termsAccepted,
+        nextInvoiceDate: lease.nextInvoiceDate,
+        lastInvoicedAt: lease.lastInvoicedAt,
         status: lease.status,
         terminationDate: lease.terminationDate,
         terminationReason: lease.terminationReason,
@@ -112,8 +123,10 @@ export async function PATCH(request: Request, routeParams: RouteParams) {
     delete updates.createdAt;
 
     // Validate dueDay if present
-    if (updates.dueDay !== undefined && (updates.dueDay < 1 || updates.dueDay > 31)) {
-      return NextResponse.json({ error: 'dueDay must be between 1 and 31' }, { status: 400 });
+    if (updates.dueDay !== undefined && updates.dueDay !== null) {
+      if (updates.dueDay < 1 || updates.dueDay > 31) {
+        return NextResponse.json({ error: 'dueDay must be between 1 and 31' }, { status: 400 });
+      }
     }
 
     try {
@@ -129,13 +142,24 @@ export async function PATCH(request: Request, routeParams: RouteParams) {
           _id: updatedLease._id,
           tenantId: updatedLease.tenantId,
           unitId: updatedLease.unitId,
+          buildingId: updatedLease.buildingId,
           startDate: updatedLease.startDate,
           endDate: updatedLease.endDate,
-          rentAmount: updatedLease.rentAmount,
-          depositAmount: updatedLease.depositAmount,
           billingCycle: updatedLease.billingCycle,
           dueDay: updatedLease.dueDay,
+          rentAmount: updatedLease.rentAmount ?? updatedLease.terms?.rent,
+          depositAmount: updatedLease.depositAmount ?? updatedLease.terms?.deposit,
+          terms: updatedLease.terms,
           additionalCharges: updatedLease.additionalCharges,
+          penaltyConfig: updatedLease.penaltyConfig,
+          paymentDueDays: updatedLease.paymentDueDays,
+          renewalNoticeDays: updatedLease.renewalNoticeDays,
+          documents: updatedLease.documents,
+          termsTemplateId: updatedLease.termsTemplateId,
+          customTermsText: updatedLease.customTermsText,
+          termsAccepted: updatedLease.termsAccepted,
+          nextInvoiceDate: updatedLease.nextInvoiceDate,
+          lastInvoicedAt: updatedLease.lastInvoicedAt,
           status: updatedLease.status,
           terminationDate: updatedLease.terminationDate,
           terminationReason: updatedLease.terminationReason,

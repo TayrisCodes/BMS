@@ -22,6 +22,7 @@ export const PERMISSIONS: Record<
     parking: string[];
     reporting: string[];
     users: string[];
+    settings: string[];
   }
 > = {
   SUPER_ADMIN: {
@@ -40,6 +41,7 @@ export const PERMISSIONS: Record<
     parking: ['read_all', 'list_all'],
     reporting: ['view_cross_org', 'system_health', 'all_metrics'],
     users: ['create_org_admin', 'read_all', 'list_all'],
+    settings: ['read', 'write'],
   },
   ORG_ADMIN: {
     organizations: ['read', 'update'],
@@ -57,6 +59,7 @@ export const PERMISSIONS: Record<
     parking: ['create', 'read', 'update', 'delete', 'list', 'assign'],
     reporting: ['view_org', 'export'],
     users: ['create', 'read', 'update', 'delete', 'list', 'assign_roles'],
+    settings: ['read', 'write'],
   },
   BUILDING_MANAGER: {
     organizations: ['read'],
@@ -74,6 +77,7 @@ export const PERMISSIONS: Record<
     parking: ['read', 'update', 'list', 'assign'],
     reporting: ['view_building'],
     users: ['read', 'list'],
+    settings: [],
   },
   FACILITY_MANAGER: {
     organizations: ['read'],
@@ -91,6 +95,7 @@ export const PERMISSIONS: Record<
     parking: ['read', 'list'],
     reporting: ['view_facility'],
     users: ['read', 'list'],
+    settings: [],
   },
   ACCOUNTANT: {
     organizations: ['read'],
@@ -108,6 +113,7 @@ export const PERMISSIONS: Record<
     parking: ['read'],
     reporting: ['view_financial', 'export'],
     users: ['read', 'list'],
+    settings: [],
   },
   SECURITY: {
     organizations: ['read'],
@@ -125,6 +131,7 @@ export const PERMISSIONS: Record<
     parking: ['read', 'update', 'list'],
     reporting: ['view_security'],
     users: ['read'],
+    settings: [],
   },
   TECHNICIAN: {
     organizations: ['read'],
@@ -142,6 +149,7 @@ export const PERMISSIONS: Record<
     parking: ['read'],
     reporting: ['view_work'],
     users: ['read'],
+    settings: [],
   },
   TENANT: {
     organizations: ['read'],
@@ -159,6 +167,7 @@ export const PERMISSIONS: Record<
     parking: ['read_own'],
     reporting: ['view_own'],
     users: [],
+    settings: [],
   },
   AUDITOR: {
     organizations: ['read'],
@@ -176,6 +185,7 @@ export const PERMISSIONS: Record<
     parking: ['read', 'list'],
     reporting: ['view_all', 'export'],
     users: ['read', 'list'],
+    settings: [],
   },
 };
 

@@ -65,7 +65,7 @@ export async function GET() {
       // Calculate MRR (Monthly Recurring Revenue) from active subscriptions
       let mrr = 0;
       const activeSubs = subscriptions.filter(
-        (sub: { status: string }) => sub.status === 'active' || sub.status === 'trial',
+        (sub) => (sub as any).status === 'active' || (sub as any).status === 'trial',
       );
       for (const sub of activeSubs) {
         if (sub.billingCycle === 'monthly') {
@@ -82,9 +82,9 @@ export async function GET() {
 
       // Subscription tier distribution
       const tierDistribution = {
-        starter: subscriptions.filter((s: { tier: string }) => s.tier === 'starter').length,
-        growth: subscriptions.filter((s: { tier: string }) => s.tier === 'growth').length,
-        enterprise: subscriptions.filter((s: { tier: string }) => s.tier === 'enterprise').length,
+        starter: subscriptions.filter((s) => (s as any).tier === 'starter').length,
+        growth: subscriptions.filter((s) => (s as any).tier === 'growth').length,
+        enterprise: subscriptions.filter((s) => (s as any).tier === 'enterprise').length,
       };
 
       return NextResponse.json({

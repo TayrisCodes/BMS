@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/lib/components/ui/button';
 import { Badge } from '@/lib/components/ui/badge';
-import { Users, Plus, LogOut, Clock } from 'lucide-react';
+import { Users, Plus, LogOut, Clock, QrCode } from 'lucide-react';
+import Link from 'next/link';
 
 interface VisitorLog {
   _id: string;
@@ -118,10 +119,18 @@ export default function SecurityVisitorsPage() {
             {visitors.length} visitor{visitors.length !== 1 ? 's' : ''} currently on site
           </p>
         </div>
-        <Button onClick={() => router.push('/security/visitors/new')} size="lg" className="h-12">
-          <Plus className="h-5 w-5 mr-2" />
-          Log Entry
-        </Button>
+        <div className="flex gap-2">
+          <Link href="/security/qr-scanner">
+            <Button variant="outline" size="lg" className="h-12">
+              <QrCode className="h-5 w-5 mr-2" />
+              Scan QR
+            </Button>
+          </Link>
+          <Button onClick={() => router.push('/security/visitors/new')} size="lg" className="h-12">
+            <Plus className="h-5 w-5 mr-2" />
+            Log Entry
+          </Button>
+        </div>
       </div>
 
       {error && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{error}</div>}

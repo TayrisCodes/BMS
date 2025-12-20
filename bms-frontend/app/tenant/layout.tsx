@@ -3,7 +3,8 @@ import { headers } from 'next/headers';
 import { requireTenant } from '@/lib/auth/guards';
 import { TenantMobileLayout } from '@/lib/components/layouts/TenantMobileLayout';
 import { ServiceWorkerRegistration } from '@/lib/components/pwa/ServiceWorkerRegistration';
-import { InstallPrompt } from '@/lib/components/pwa/InstallPrompt';
+import PWAInstallPrompt from '@/lib/components/pwa/PWAInstallPrompt';
+import { PushNotificationPrompt } from '@/lib/components/pwa/PushNotificationPrompt';
 import { OfflineBanner } from '@/lib/components/tenant/OfflineBanner';
 import { ErrorBoundary } from '@/lib/components/tenant/ErrorBoundary';
 
@@ -34,7 +35,8 @@ export default async function TenantLayout({ children }: { children: ReactNode }
           <OfflineBanner />
           <TenantMobileLayout>
             {children}
-            <InstallPrompt />
+            <PWAInstallPrompt />
+            <PushNotificationPrompt />
           </TenantMobileLayout>
         </ErrorBoundary>
       </>

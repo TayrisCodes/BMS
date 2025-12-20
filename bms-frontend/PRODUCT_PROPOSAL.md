@@ -277,7 +277,7 @@
   - Multi-language message support
 
 - **Digital Notice Board**
-  - Building-wide announcements
+  - Building-wide announcementspl
   - Targeted messaging by floor/unit/tenant type
   - Emergency alerts and updates
   - Notice history and archiving
@@ -484,10 +484,11 @@
 
 ### Training & Onboarding
 
-- **User Training**: Comprehensive training materials
-- **Video Tutorials**: Step-by-step video guides
-- **Documentation**: Complete user and admin guides
-- **Support Team**: Dedicated support during onboarding
+- **User Training**: Comprehensive training materials covering all user roles (Organization Admin, Building Manager, Facility Manager, Accountant, Technician, Security, and Tenant), including multi-tenant organization setup, role-based access control, building and unit configuration, tenant onboarding workflows, lease management, automated invoicing, local payment integrations (Telebirr, CBE Birr, Chapa, HelloCash), complaint and work order management, utilities and meter reading, parking and vehicle management, security and visitor logging, reporting and ERCA compliance, and multi-language support (Amharic, English, Afaan Oromo, Tigrigna)
+
+- **Documented (Manual) Tutorials**: Step-by-step guides for common workflows including: setting up organizations and buildings, creating tenant profiles and leases, configuring automated invoice generation, setting up payment gateways and processing payments, managing complaints and converting them to work orders, assigning technicians and tracking maintenance tasks, registering meters and entering readings, managing parking spaces and vehicle registrations, logging visitors and security incidents, generating financial reports and ERCA-compliant exports, configuring user roles and permissions, using the tenant portal for payments and complaints, and utilizing the technician and security portals for mobile operations
+
+- **Documentation**: Complete user and admin guides including: API documentation for developers, role-based access control (RBAC) matrix and permissions reference, data model and schema documentation, payment integration setup guides for each provider, ERCA compliance reporting procedures, multi-language configuration and localization, PWA installation and offline usage, notification preferences and channel configuration, reporting and analytics guide, troubleshooting and FAQ sections, and best practices for property management workflows
 
 ### Ongoing Support
 

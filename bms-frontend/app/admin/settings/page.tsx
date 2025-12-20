@@ -79,6 +79,7 @@ interface SystemSettings {
         enabled: boolean;
         apiKey?: string;
         publicKey?: string;
+        webhookSecret?: string;
       };
       helloCash: {
         enabled: boolean;
@@ -947,7 +948,7 @@ export default function AdminSettingsPage() {
                   {settings.integrations.paymentProviders.chapa.enabled && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                       <div className="space-y-2">
-                        <Label htmlFor="chapaApiKey">API Key</Label>
+                        <Label htmlFor="chapaApiKey">Secret Key *</Label>
                         <Input
                           id="chapaApiKey"
                           type="password"
@@ -967,8 +968,11 @@ export default function AdminSettingsPage() {
                               },
                             })
                           }
-                          placeholder="Enter API key"
+                          placeholder="CHASECK_TEST-..."
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Your Chapa secret key (starts with CHASECK_)
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="chapaPublicKey">Public Key</Label>
@@ -991,8 +995,50 @@ export default function AdminSettingsPage() {
                               },
                             })
                           }
-                          placeholder="Enter public key"
+                          placeholder="CHAPUBK_TEST-..."
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Your Chapa public key (optional, for client-side)
+                        </p>
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="chapaWebhookSecret">Webhook Secret</Label>
+                        <Input
+                          id="chapaWebhookSecret"
+                          type="password"
+                          value={settings.integrations.paymentProviders.chapa.webhookSecret || ''}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              integrations: {
+                                ...settings.integrations,
+                                paymentProviders: {
+                                  ...settings.integrations.paymentProviders,
+                                  chapa: {
+                                    ...settings.integrations.paymentProviders.chapa,
+                                    webhookSecret: e.target.value,
+                                  },
+                                },
+                              },
+                            })
+                          }
+                          placeholder="Webhook secret for signature verification"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Webhook secret for verifying Chapa webhook signatures (optional, uses
+                          secret key if not set)
+                        </p>
+                      </div>
+                      <div className="md:col-span-2 p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm font-medium mb-2">Webhook URL:</p>
+                        <code className="text-xs bg-background p-2 rounded block">
+                          {typeof window !== 'undefined'
+                            ? `${window.location.origin}/api/webhooks/payments/chapa`
+                            : '/api/webhooks/payments/chapa'}
+                        </code>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Configure this URL in your Chapa dashboard for payment callbacks
+                        </p>
                       </div>
                     </div>
                   )}

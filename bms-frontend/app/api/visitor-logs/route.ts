@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAuthContextFromCookies } from '@/lib/auth/session';
 import { requirePermission } from '@/lib/auth/authz';
 import { withOrganizationScope } from '@/lib/organizations/scoping';
@@ -16,7 +16,7 @@ import {
  * List visitor logs with optional filters.
  * Requires visitorLogs.read permission or appropriate role.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const context = await getAuthContextFromCookies();
 
@@ -198,7 +198,7 @@ export async function GET(request: Request) {
  * Create a new visitor log entry.
  * Requires SECURITY or BUILDING_MANAGER role.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const context = await getAuthContextFromCookies();
 

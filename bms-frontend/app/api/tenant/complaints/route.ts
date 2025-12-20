@@ -49,15 +49,29 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const statusFilter = searchParams.get('status') as ComplaintStatus | null;
+    const typeFilter = searchParams.get('type') as 'complaint' | 'maintenance_request' | null;
+    const maintenanceCategoryFilter = searchParams.get('maintenanceCategory') as string | null;
+    const urgencyFilter = searchParams.get('urgency') as string | null;
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Get complaints for this tenant
     const complaints = await findComplaintsByTenant(tenant._id.toString(), organizationId);
 
-    // Filter by status if provided
+    // Filter by various criteria
     let filteredComplaints = complaints;
     if (statusFilter) {
-      filteredComplaints = complaints.filter((c) => c.status === statusFilter);
+      filteredComplaints = filteredComplaints.filter((c) => c.status === statusFilter);
+    }
+    if (typeFilter) {
+      filteredComplaints = filteredComplaints.filter((c) => c.type === typeFilter);
+    }
+    if (maintenanceCategoryFilter) {
+      filteredComplaints = filteredComplaints.filter(
+        (c) => c.maintenanceCategory === maintenanceCategoryFilter,
+      );
+    }
+    if (urgencyFilter) {
+      filteredComplaints = filteredComplaints.filter((c) => c.urgency === urgencyFilter);
     }
 
     // Apply limit
@@ -74,6 +88,23 @@ export async function GET(request: NextRequest) {
       assignedTo: complaint.assignedTo,
       resolvedAt: complaint.resolvedAt,
       resolutionNotes: complaint.resolutionNotes,
+      // Maintenance request fields
+      type: complaint.type || 'complaint',
+      maintenanceCategory: complaint.maintenanceCategory || null,
+      urgency: complaint.urgency || null,
+      preferredTimeWindow: complaint.preferredTimeWindow
+        ? {
+            start:
+              complaint.preferredTimeWindow.start instanceof Date
+                ? complaint.preferredTimeWindow.start.toISOString()
+                : new Date(complaint.preferredTimeWindow.start).toISOString(),
+            end:
+              complaint.preferredTimeWindow.end instanceof Date
+                ? complaint.preferredTimeWindow.end.toISOString()
+                : new Date(complaint.preferredTimeWindow.end).toISOString(),
+          }
+        : null,
+      linkedWorkOrderId: complaint.linkedWorkOrderId || null,
       createdAt: complaint.createdAt.toISOString(),
       updatedAt: complaint.updatedAt.toISOString(),
     }));
@@ -159,6 +190,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate type if provided
+    const validTypes = ['complaint', 'maintenance_request'];
+    if (body.type && !validTypes.includes(body.type)) {
+      return NextResponse.json(
+        { error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
+        { status: 400 },
+      );
+    }
+
+    // Validate maintenanceCategory if type is maintenance_request
+    if (body.type === 'maintenance_request') {
+      const validMaintenanceCategories = [
+        'plumbing',
+        'electrical',
+        'hvac',
+        'appliance',
+        'structural',
+        'other',
+      ];
+      if (
+        body.maintenanceCategory &&
+        !validMaintenanceCategories.includes(body.maintenanceCategory)
+      ) {
+        return NextResponse.json(
+          {
+            error: `Invalid maintenanceCategory. Must be one of: ${validMaintenanceCategories.join(', ')}`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Validate urgency if provided
+    const validUrgencies = ['low', 'medium', 'high', 'emergency'];
+    if (body.urgency && !validUrgencies.includes(body.urgency)) {
+      return NextResponse.json(
+        { error: `Invalid urgency. Must be one of: ${validUrgencies.join(', ')}` },
+        { status: 400 },
+      );
+    }
+
+    // Parse preferredTimeWindow if provided
+    let preferredTimeWindow = null;
+    if (body.preferredTimeWindow) {
+      try {
+        preferredTimeWindow = {
+          start: new Date(body.preferredTimeWindow.start),
+          end: new Date(body.preferredTimeWindow.end),
+        };
+        // Validate that end is after start
+        if (preferredTimeWindow.end <= preferredTimeWindow.start) {
+          return NextResponse.json(
+            { error: 'Preferred time window end must be after start' },
+            { status: 400 },
+          );
+        }
+      } catch (error) {
+        return NextResponse.json({ error: 'Invalid preferredTimeWindow format' }, { status: 400 });
+      }
+    }
+
     // Import and use the proper createComplaint function
     const { createComplaint } = await import('@/lib/complaints/complaints');
 
@@ -173,6 +265,11 @@ export async function POST(request: NextRequest) {
       photos: body.photos || null, // Array of photo URLs
       priority: body.priority || 'medium',
       status: 'open',
+      // Maintenance request fields
+      type: body.type || 'complaint',
+      maintenanceCategory: body.maintenanceCategory || undefined,
+      urgency: body.urgency || undefined,
+      preferredTimeWindow: preferredTimeWindow,
     });
 
     return NextResponse.json(
@@ -184,6 +281,23 @@ export async function POST(request: NextRequest) {
         status: complaint.status,
         priority: complaint.priority,
         photos: complaint.photos || [],
+        // Maintenance request fields
+        type: complaint.type || 'complaint',
+        maintenanceCategory: complaint.maintenanceCategory || null,
+        urgency: complaint.urgency || null,
+        preferredTimeWindow: complaint.preferredTimeWindow
+          ? {
+              start:
+                complaint.preferredTimeWindow.start instanceof Date
+                  ? complaint.preferredTimeWindow.start.toISOString()
+                  : new Date(complaint.preferredTimeWindow.start).toISOString(),
+              end:
+                complaint.preferredTimeWindow.end instanceof Date
+                  ? complaint.preferredTimeWindow.end.toISOString()
+                  : new Date(complaint.preferredTimeWindow.end).toISOString(),
+            }
+          : null,
+        linkedWorkOrderId: complaint.linkedWorkOrderId || null,
         createdAt: complaint.createdAt.toISOString(),
         updatedAt: complaint.updatedAt.toISOString(),
       },

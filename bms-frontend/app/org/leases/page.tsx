@@ -42,11 +42,17 @@ interface Lease {
   _id: string;
   tenantId: string;
   unitId: string;
+  buildingId?: string | null;
   startDate: string;
   endDate?: string | null;
-  rentAmount: number;
+  rentAmount?: number;
   billingCycle?: string;
   status: string;
+  terms?: {
+    rent: number;
+    serviceCharges?: number | null;
+    deposit?: number | null;
+  };
 }
 
 interface Tenant {
@@ -147,10 +153,9 @@ export default function OrgLeasesPage() {
         const unit = units[lease.unitId];
         const building = unit ? buildings[unit.buildingId] : null;
 
-        const tenantName = tenant
-          ? `${tenant.firstName} ${tenant.lastName}`.toLowerCase()
-          : '';
-        const unitInfo = building && unit ? `${building.name} ${unit.unitNumber}`.toLowerCase() : '';
+        const tenantName = tenant ? `${tenant.firstName} ${tenant.lastName}`.toLowerCase() : '';
+        const unitInfo =
+          building && unit ? `${building.name} ${unit.unitNumber}`.toLowerCase() : '';
 
         return tenantName.includes(searchLower) || unitInfo.includes(searchLower);
       });
@@ -165,12 +170,12 @@ export default function OrgLeasesPage() {
     (sum, l) =>
       sum +
       (l.billingCycle === 'monthly'
-        ? l.rentAmount
+        ? (l.rentAmount ?? l.terms?.rent ?? 0)
         : l.billingCycle === 'quarterly'
-          ? l.rentAmount / 3
+          ? (l.rentAmount ?? l.terms?.rent ?? 0) / 3
           : l.billingCycle === 'annually'
-            ? l.rentAmount / 12
-            : l.rentAmount),
+            ? (l.rentAmount ?? l.terms?.rent ?? 0) / 12
+            : (l.rentAmount ?? l.terms?.rent ?? 0)),
     0,
   );
 
@@ -220,9 +225,7 @@ export default function OrgLeasesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{filteredLeases.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {leases.length} total in system
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{leases.length} total in system</p>
             </CardContent>
           </Card>
 
@@ -269,15 +272,17 @@ export default function OrgLeasesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                {filteredLeases.filter((l) => {
-                  if (!l.endDate || l.status !== 'active') return false;
-                  const endDate = new Date(l.endDate);
-                  const today = new Date();
-                  const daysUntilExpiry = Math.ceil(
-                    (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-                  );
-                  return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
-                }).length}
+                {
+                  filteredLeases.filter((l) => {
+                    if (!l.endDate || l.status !== 'active') return false;
+                    const endDate = new Date(l.endDate);
+                    const today = new Date();
+                    const daysUntilExpiry = Math.ceil(
+                      (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+                    );
+                    return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+                  }).length
+                }
               </div>
               <p className="text-xs text-muted-foreground mt-1">Within 30 days</p>
             </CardContent>
@@ -392,7 +397,7 @@ export default function OrgLeasesPage() {
                             <p className="text-sm text-muted-foreground max-w-md">
                               {leases.length === 0
                                 ? 'Get started by creating your first lease agreement. This will help you track rent payments and manage tenant relationships.'
-                                : 'Try adjusting your search or filter criteria to find what you\'re looking for.'}
+                                : "Try adjusting your search or filter criteria to find what you're looking for."}
                             </p>
                           </div>
                           {leases.length === 0 && (
@@ -519,7 +524,9 @@ export default function OrgLeasesPage() {
                             <div className="flex items-center gap-1.5 font-semibold">
                               <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                               <span className="text-xs text-muted-foreground">ETB</span>
-                              <span>{lease.rentAmount.toLocaleString()}</span>
+                              <span>
+                                {(lease.rentAmount ?? lease.terms?.rent ?? 0).toLocaleString()}
+                              </span>
                               {lease.billingCycle && (
                                 <Badge variant="outline" className="ml-2 text-xs capitalize">
                                   {lease.billingCycle}
@@ -567,4 +574,3 @@ export default function OrgLeasesPage() {
     </DashboardPage>
   );
 }
-

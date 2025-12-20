@@ -140,6 +140,9 @@ async function invoiceExistsForPeriod(
 
 /**
  * Generates invoice items from a lease for a given period.
+ * Handles VAT based on lease configuration:
+ * - If vatIncluded is true: rentAmount includes VAT, so we extract the base amount
+ * - If vatIncluded is false or undefined: rentAmount is base, VAT will be added on top
  */
 function generateInvoiceItemsFromLease(
   lease: Lease,
@@ -155,9 +158,18 @@ function generateInvoiceItemsFromLease(
     (periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24) + 1,
   );
 
+  const vatRate = lease.vatRate ?? 15; // Default 15% VAT
   let rentAmount = lease.rentAmount;
+
+  // If VAT is included in rentAmount, extract the base amount
+  if (lease.vatIncluded === true) {
+    // rentAmount = baseAmount * (1 + vatRate/100)
+    // baseAmount = rentAmount / (1 + vatRate/100)
+    rentAmount = Math.round(rentAmount / (1 + vatRate / 100));
+  }
+
   if (isPartialPeriod) {
-    rentAmount = calculateProratedAmount(lease.rentAmount, totalDaysInPeriod, actualDaysInPeriod);
+    rentAmount = calculateProratedAmount(rentAmount, totalDaysInPeriod, actualDaysInPeriod);
   }
 
   items.push({
@@ -304,12 +316,10 @@ export async function generateInvoicesForLeases(
       const issueDate = new Date(); // Issue date is today
       const dueDate = calculateDueDate(issueDate, lease.dueDay);
 
-      // Calculate subtotal and total
-      const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-      const tax = 0; // Tax can be configured per organization later
-      const total = subtotal + tax;
+      // Get VAT rate from lease (default: 15%)
+      const vatRate = lease.vatRate ?? 15;
 
-      // Create invoice
+      // Create invoice (VAT will be calculated automatically in createInvoice)
       const invoiceInput: CreateInvoiceInput = {
         organizationId,
         leaseId: lease._id,
@@ -320,7 +330,7 @@ export async function generateInvoicesForLeases(
         periodStart: actualPeriodStart,
         periodEnd: actualPeriodEnd,
         items,
-        tax,
+        vatRate, // Pass VAT rate, VAT will be calculated on subtotal
         status: 'draft',
       };
 
@@ -394,12 +404,15 @@ export async function generateInvoiceForLease(
           : periodEnd
         : issueDate,
       items: customItems,
-      tax: 0,
+      vatRate: lease.vatRate ?? 15, // Pass VAT rate
       status: 'draft',
     };
 
     return await createInvoice(invoiceInput);
   }
+
+  // Get VAT rate from lease (default: 15%)
+  const vatRate = lease.vatRate ?? 15;
 
   // Otherwise, calculate period dates based on billing cycle
   let actualPeriodStart: Date;
@@ -464,7 +477,7 @@ export async function generateInvoiceForLease(
     periodStart: actualPeriodStart,
     periodEnd: actualPeriodEnd,
     items,
-    tax: 0,
+    vatRate, // Pass VAT rate
     status: 'draft',
   };
 

@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Checkbox } from '@/lib/components/ui/checkbox';
 import { Label } from '@/lib/components/ui/label';
-import { Badge } from '@/lib/components/ui/badge';
-import { Info } from 'lucide-react';
+import { Card, CardContent } from '@/lib/components/ui/card';
 import type { UserRole } from '@/lib/auth/types';
+import { PermissionPreview } from './PermissionPreview';
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   SUPER_ADMIN: 'Platform owner with full system access across all organizations',
@@ -19,195 +18,72 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   AUDITOR: 'Read-only access for auditing and reporting',
 };
 
-const STAFF_ROLES: UserRole[] = [
-  'SUPER_ADMIN',
-  'ORG_ADMIN',
-  'BUILDING_MANAGER',
-  'FACILITY_MANAGER',
-  'ACCOUNTANT',
-  'SECURITY',
-  'TECHNICIAN',
-  'AUDITOR',
-];
-
-const TENANT_ROLE: UserRole = 'TENANT';
-
 interface RoleSelectorProps {
-  currentRoles: UserRole[];
+  selectedRoles: UserRole[];
   onRolesChange: (roles: UserRole[]) => void;
-  disabled?: boolean;
-  currentUserRoles?: UserRole[];
-  isSuperAdmin?: boolean;
-  showDescriptions?: boolean;
-  className?: string;
+  allowedRoles?: UserRole[] | undefined; // Roles that can be selected (for ORG_ADMIN restrictions)
+  showPermissionPreview?: boolean;
 }
 
 export function RoleSelector({
-  currentRoles,
+  selectedRoles,
   onRolesChange,
-  disabled = false,
-  currentUserRoles = [],
-  isSuperAdmin = false,
-  showDescriptions = true,
-  className,
+  allowedRoles,
+  showPermissionPreview = true,
 }: RoleSelectorProps) {
-  const [selectedRoles, setSelectedRoles] = useState<UserRole[]>(currentRoles);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSelectedRoles(currentRoles);
-  }, [currentRoles]);
-
-  // Determine which roles the current user can assign
-  const canAssignRole = (role: UserRole): boolean => {
-    if (disabled) return false;
-    if (isSuperAdmin) return true;
-
-    // Only ORG_ADMIN and SUPER_ADMIN can assign roles
-    const canAssign =
-      currentUserRoles.includes('ORG_ADMIN') || currentUserRoles.includes('SUPER_ADMIN');
-    if (!canAssign) return false;
-
-    // ORG_ADMIN cannot assign SUPER_ADMIN
-    if (role === 'SUPER_ADMIN' && !isSuperAdmin) {
-      return false;
-    }
-
-    return true;
-  };
-
   const handleRoleToggle = (role: UserRole) => {
-    if (!canAssignRole(role)) return;
-
-    const newRoles = selectedRoles.includes(role)
-      ? selectedRoles.filter((r) => r !== role)
-      : [...selectedRoles, role];
-
-    // Validate role combinations
-    const validation = validateRoleCombination(newRoles);
-    if (!validation.valid) {
-      setValidationError(validation.error || null);
-      return;
+    if (selectedRoles.includes(role)) {
+      onRolesChange(selectedRoles.filter((r) => r !== role));
+    } else {
+      onRolesChange([...selectedRoles, role]);
     }
-
-    setValidationError(null);
-    setSelectedRoles(newRoles);
-    onRolesChange(newRoles);
   };
 
-  const validateRoleCombination = (roles: UserRole[]): { valid: boolean; error?: string } => {
-    if (roles.length === 0) {
-      return { valid: false, error: 'At least one role is required' };
-    }
-
-    // Check if TENANT is combined with staff roles
-    const hasTenant = roles.includes(TENANT_ROLE);
-    const hasStaffRole = roles.some((role) => STAFF_ROLES.includes(role));
-
-    if (hasTenant && hasStaffRole) {
-      return {
-        valid: false,
-        error:
-          'TENANT role cannot be combined with staff roles. A user must be either a tenant or staff member, not both.',
-      };
-    }
-
-    // Check if SUPER_ADMIN is combined with other roles (optional: SUPER_ADMIN should typically be standalone)
-    // This is a warning, not an error - we'll allow it but show a message
-    if (roles.includes('SUPER_ADMIN') && roles.length > 1) {
-      // This is allowed but unusual
-    }
-
-    return { valid: true };
-  };
-
-  const allRoles: UserRole[] = [
-    'SUPER_ADMIN',
-    'ORG_ADMIN',
-    'BUILDING_MANAGER',
-    'FACILITY_MANAGER',
-    'ACCOUNTANT',
-    'SECURITY',
-    'TECHNICIAN',
-    'TENANT',
-    'AUDITOR',
-  ];
+  // Determine which roles to show
+  const rolesToShow = allowedRoles
+    ? (Object.keys(ROLE_DESCRIPTIONS) as UserRole[]).filter((role) => allowedRoles.includes(role))
+    : (Object.keys(ROLE_DESCRIPTIONS) as UserRole[]);
 
   return (
-    <div className={className}>
-      <div className="space-y-3">
-        {allRoles.map((role) => {
-          const isSelected = selectedRoles.includes(role);
-          const canAssign = canAssignRole(role);
-          const isDisabled = disabled || !canAssign;
+    <div className="space-y-4">
+      <div>
+        <Label className="text-base font-semibold mb-3 block">Select Roles</Label>
+        <div className="space-y-3 border rounded-lg p-4">
+          {rolesToShow.map((role) => {
+            const isSelected = selectedRoles.includes(role);
+            const isDisabled = allowedRoles && !allowedRoles.includes(role);
 
-          return (
-            <div
-              key={role}
-              className={`flex items-start space-x-3 p-3 rounded-lg border ${
-                isSelected ? 'bg-primary/5 border-primary' : 'bg-background border-border'
-              } ${isDisabled ? 'opacity-50' : ''}`}
-            >
-              <Checkbox
-                id={role}
-                checked={isSelected}
-                onCheckedChange={() => handleRoleToggle(role)}
-                disabled={isDisabled}
-                className="mt-1"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+            return (
+              <div key={role} className="flex items-start space-x-3">
+                <Checkbox
+                  id={role}
+                  checked={isSelected}
+                  disabled={isDisabled}
+                  onCheckedChange={() => !isDisabled && handleRoleToggle(role)}
+                  className="mt-1"
+                />
+                <div className="flex-1">
                   <label
                     htmlFor={role}
                     className={`text-sm font-medium leading-none cursor-pointer ${
-                      isDisabled ? 'cursor-not-allowed opacity-50' : ''
+                      isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     {role.replace(/_/g, ' ')}
                   </label>
-                  {isSelected && (
-                    <Badge variant="outline" className="text-xs">
-                      Selected
-                    </Badge>
-                  )}
-                  {!canAssign && !isSuperAdmin && role === 'SUPER_ADMIN' && (
-                    <Badge variant="secondary" className="text-xs">
-                      Requires SUPER_ADMIN
-                    </Badge>
-                  )}
-                </div>
-                {showDescriptions && (
                   <p className="text-xs text-muted-foreground mt-1">{ROLE_DESCRIPTIONS[role]}</p>
-                )}
-                {!canAssign && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                    You don&apos;t have permission to assign this role
-                  </p>
-                )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        {selectedRoles.length === 0 && (
+          <p className="text-sm text-destructive mt-2">At least one role is required</p>
+        )}
       </div>
 
-      {validationError && (
-        <div className="mt-4 p-4 rounded-md bg-destructive/10 text-destructive text-sm flex items-start gap-2">
-          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <p>{validationError}</p>
-        </div>
-      )}
-
-      {selectedRoles.length > 0 && (
-        <div className="mt-4 p-3 bg-muted rounded-lg">
-          <Label className="text-sm font-medium">Selected Roles ({selectedRoles.length})</Label>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {selectedRoles.map((role) => (
-              <Badge key={role} variant="default">
-                {role.replace(/_/g, ' ')}
-              </Badge>
-            ))}
-          </div>
-        </div>
+      {showPermissionPreview && selectedRoles.length > 0 && (
+        <PermissionPreview roles={selectedRoles} />
       )}
     </div>
   );

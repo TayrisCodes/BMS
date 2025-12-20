@@ -8,6 +8,15 @@ const COMPLAINTS_COLLECTION_NAME = 'complaints';
 export type ComplaintCategory = 'maintenance' | 'noise' | 'security' | 'cleanliness' | 'other';
 export type ComplaintPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type ComplaintStatus = 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+export type ComplaintType = 'complaint' | 'maintenance_request';
+export type MaintenanceCategory =
+  | 'plumbing'
+  | 'electrical'
+  | 'hvac'
+  | 'appliance'
+  | 'structural'
+  | 'other';
+export type Urgency = 'low' | 'medium' | 'high' | 'emergency';
 
 export interface Complaint {
   _id: string;
@@ -23,6 +32,15 @@ export interface Complaint {
   assignedTo?: string | null; // ObjectId ref to users
   resolvedAt?: Date | null;
   resolutionNotes?: string | null;
+  // Maintenance request fields
+  type?: ComplaintType; // 'complaint' | 'maintenance_request'
+  maintenanceCategory?: MaintenanceCategory; // For maintenance requests
+  urgency?: Urgency; // Separate from priority, for maintenance requests
+  preferredTimeWindow?: {
+    start: Date;
+    end: Date;
+  } | null;
+  linkedWorkOrderId?: string | null; // Reference to work order if created
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +70,30 @@ export async function ensureComplaintIndexes(db?: Db): Promise<void> {
       key: { assignedTo: 1 },
       sparse: true,
       name: 'assignedTo',
+    },
+    // Index on type for filtering maintenance requests
+    {
+      key: { type: 1 },
+      sparse: true,
+      name: 'type',
+    },
+    // Index on maintenanceCategory
+    {
+      key: { maintenanceCategory: 1 },
+      sparse: true,
+      name: 'maintenanceCategory',
+    },
+    // Index on urgency
+    {
+      key: { urgency: 1 },
+      sparse: true,
+      name: 'urgency',
+    },
+    // Index on linkedWorkOrderId
+    {
+      key: { linkedWorkOrderId: 1 },
+      sparse: true,
+      name: 'linkedWorkOrderId',
     },
   ];
 
@@ -103,6 +145,14 @@ export interface CreateComplaintInput {
   photos?: string[] | null;
   priority?: ComplaintPriority;
   status?: ComplaintStatus;
+  // Maintenance request fields
+  type?: ComplaintType;
+  maintenanceCategory?: MaintenanceCategory;
+  urgency?: Urgency;
+  preferredTimeWindow?: {
+    start: Date;
+    end: Date;
+  } | null;
 }
 
 export async function createComplaint(input: CreateComplaintInput): Promise<Complaint> {
@@ -133,6 +183,12 @@ export async function createComplaint(input: CreateComplaintInput): Promise<Comp
     assignedTo: null,
     resolvedAt: null,
     resolutionNotes: null,
+    // Maintenance request fields
+    type: input.type ?? 'complaint',
+    maintenanceCategory: input.maintenanceCategory ?? undefined,
+    urgency: input.urgency ?? undefined,
+    preferredTimeWindow: input.preferredTimeWindow ?? null,
+    linkedWorkOrderId: null,
     createdAt: now,
     updatedAt: now,
   };

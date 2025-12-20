@@ -60,7 +60,7 @@ export default function OccupancyReportsPage() {
   const [report, setReport] = useState<OccupancyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [buildings, setBuildings] = useState<Array<{ _id: string; name: string }>>([]);
-  const [selectedBuilding, setSelectedBuilding] = useState<string>('');
+  const [selectedBuilding, setSelectedBuilding] = useState<string>('__all__');
   const [exporting, setExporting] = useState<{ csv: boolean; pdf: boolean }>({
     csv: false,
     pdf: false,
@@ -80,7 +80,7 @@ export default function OccupancyReportsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
 
@@ -106,7 +106,7 @@ export default function OccupancyReportsPage() {
     setExporting((prev) => ({ ...prev, csv: true }));
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
 
@@ -141,7 +141,7 @@ export default function OccupancyReportsPage() {
     setExporting((prev) => ({ ...prev, pdf: true }));
     try {
       const params = new URLSearchParams();
-      if (selectedBuilding) {
+      if (selectedBuilding && selectedBuilding !== '__all__') {
         params.append('buildingId', selectedBuilding);
       }
 
@@ -204,7 +204,7 @@ export default function OccupancyReportsPage() {
                   <SelectValue placeholder="All Buildings" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Buildings</SelectItem>
+                  <SelectItem value="__all__">All Buildings</SelectItem>
                   {buildings.map((building) => (
                     <SelectItem key={building._id} value={building._id}>
                       {building.name}

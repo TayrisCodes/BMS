@@ -50,6 +50,65 @@ export async function notifyInvoiceCreated(
   }
 }
 
+export async function notifyRentChange({
+  leaseId,
+  tenantId,
+  organizationId,
+  unitLabel,
+  oldRent,
+  newRent,
+  effectiveDate,
+}: {
+  leaseId: string;
+  tenantId: string;
+  organizationId: string;
+  unitLabel?: string;
+  oldRent?: number | null;
+  newRent?: number | null;
+  effectiveDate?: Date | string | null;
+}) {
+  const notificationService = new NotificationService();
+  const title = 'Rent Updated';
+  const message = `Your rent has been updated${unitLabel ? ` for ${unitLabel}` : ''} ${
+    effectiveDate ? `effective ${new Date(effectiveDate).toLocaleDateString()}` : ''
+  }. ${
+    oldRent !== undefined && oldRent !== null && newRent !== undefined && newRent !== null
+      ? `Old: ETB ${oldRent.toLocaleString()} → New: ETB ${newRent.toLocaleString()}`
+      : ''
+  }`;
+
+  await notificationService.createNotification({
+    organizationId,
+    tenantId,
+    type: 'invoice_created',
+    title,
+    message,
+    channels: ['in_app', 'email', 'sms'],
+    metadata: {
+      leaseId,
+      oldRent,
+      newRent,
+      effectiveDate: effectiveDate ? new Date(effectiveDate) : undefined,
+    },
+  });
+
+  // Notice board (if available)
+  try {
+    const noticeModule = await import('@/lib/notifications/notice-board');
+    if (noticeModule?.postNotice) {
+      await noticeModule.postNotice({
+        organizationId,
+        title,
+        content: message,
+        audience: { tenantId },
+        category: 'rent',
+      });
+    }
+  } catch (err) {
+    console.warn('Notice board post failed', err);
+  }
+}
+
 /**
  * Notify tenant when payment is due (reminder).
  */

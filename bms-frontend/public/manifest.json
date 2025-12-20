@@ -1,13 +1,14 @@
 {
   "name": "BMS - Building Management System",
   "short_name": "BMS",
-  "description": "Building Management System for tenants and staff",
+  "description": "Building Management System for tenants and staff - Manage your lease, payments, complaints, and more",
   "start_url": "/tenant/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "orientation": "portrait-primary",
   "scope": "/tenant",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
@@ -28,7 +29,23 @@
       "purpose": "any"
     }
   ],
-  "categories": ["business", "productivity"],
+  "categories": ["business", "productivity", "finance"],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "BMS Dashboard"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "BMS Mobile View"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Dashboard",
@@ -49,6 +66,13 @@
       "short_name": "Complaints",
       "description": "View and submit complaints",
       "url": "/tenant/complaints",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Messages",
+      "description": "View messages from building manager",
+      "url": "/tenant/messages",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]

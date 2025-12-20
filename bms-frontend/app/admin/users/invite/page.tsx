@@ -13,10 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/lib/components/ui/card';
-import { Checkbox } from '@/lib/components/ui/checkbox';
 import { Loader2, ArrowLeft, Mail, Phone, UserPlus } from 'lucide-react';
 import { apiGet } from '@/lib/utils/api-client';
 import type { UserRole } from '@/lib/auth/types';
+import { RoleSelector } from '@/components/users/RoleSelector';
 
 interface Organization {
   id: string;
@@ -24,44 +24,49 @@ interface Organization {
   code: string;
 }
 
-const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  SUPER_ADMIN: 'Platform owner with full system access across all organizations',
-  ORG_ADMIN: 'Organization administrator with full access to their organization',
-  BUILDING_MANAGER: 'Manages a specific building: units, tenants, complaints, invoices',
-  FACILITY_MANAGER: 'Manages maintenance, assets, and facility operations',
-  ACCOUNTANT: 'Manages invoices, payments, and financial operations',
-  SECURITY: 'Manages security, visitor logs, and parking operations',
-  TECHNICIAN: 'Executes maintenance work orders and logs activities',
-  TENANT: 'Tenant portal access (own data only)',
-  AUDITOR: 'Read-only access for auditing and reporting',
-};
-
 export default function InviteUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isOrgAdmin, setIsOrgAdmin] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
     name: '',
+    password: '',
     roles: [] as UserRole[],
     organizationId: '',
+    createType: 'invite' as 'invite' | 'direct', // 'invite' = send email, 'direct' = create with password
+    emailFrom: '',
+    emailFromName: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [invitationToken, setInvitationToken] = useState<string | null>(null);
 
+  // Roles that ORG_ADMIN can assign
+  const ORG_ADMIN_ALLOWED_ROLES: UserRole[] = [
+    'BUILDING_MANAGER',
+    'FACILITY_MANAGER',
+    'ACCOUNTANT',
+    'SECURITY',
+    'TECHNICIAN',
+    'AUDITOR',
+  ];
+
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        // Check if user is SUPER_ADMIN
+        // Check user roles
         const profile = await apiGet<{ roles: UserRole[] }>('/api/users/me');
         const roles = profile.roles || [];
         const superAdmin = roles.includes('SUPER_ADMIN');
+        const orgAdmin = roles.includes('ORG_ADMIN');
         setIsSuperAdmin(superAdmin);
+        setIsOrgAdmin(orgAdmin);
 
         // Load organizations if SUPER_ADMIN
         if (superAdmin) {
@@ -76,15 +81,6 @@ export default function InviteUserPage() {
     }
     loadData();
   }, []);
-
-  const handleRoleToggle = (role: UserRole) => {
-    setFormData((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter((r) => r !== role)
-        : [...prev.roles, role],
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -119,6 +115,18 @@ export default function InviteUserPage() {
       newErrors.organizationId = 'Organization is required';
     }
 
+    // If direct creation, password is required
+    if (formData.createType === 'direct') {
+      if (!formData.password || formData.password.trim().length < 8) {
+        newErrors.password = 'Password is required and must be at least 8 characters';
+      }
+    }
+
+    // If sending invitation, email is required
+    if (formData.createType === 'invite' && !formData.email) {
+      newErrors.email = 'Email is required to send invitation';
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       setSaving(false);
@@ -135,25 +143,37 @@ export default function InviteUserPage() {
           email: formData.email.trim() || null,
           phone: formData.phone.trim(),
           name: formData.name.trim() || null,
+          password: formData.createType === 'direct' ? formData.password.trim() : undefined,
           roles: formData.roles,
           organizationId: isSuperAdmin ? formData.organizationId : undefined,
+          createType: formData.createType,
+          emailFrom: formData.emailFrom.trim() || undefined,
+          emailFromName: formData.emailFromName.trim() || undefined,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setSuccessMessage('User invitation sent successfully!');
-        if (data.token) {
-          setInvitationToken(data.token);
+        if (formData.createType === 'direct') {
+          setSuccessMessage('User created successfully!');
+        } else {
+          setSuccessMessage('User invitation sent successfully!');
+          if (data.token) {
+            setInvitationToken(data.token);
+          }
         }
         // Reset form
         setFormData({
           email: '',
           phone: '',
           name: '',
+          password: '',
           roles: [],
           organizationId: '',
+          createType: 'invite',
+          emailFrom: '',
+          emailFromName: '',
         });
       } else {
         setErrors({ submit: data.error || 'Failed to send invitation' });
@@ -251,6 +271,84 @@ export default function InviteUserPage() {
               {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="createType">User Creation Method</Label>
+              <select
+                id="createType"
+                value={formData.createType}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    createType: e.target.value as 'invite' | 'direct',
+                    password: '', // Clear password when switching
+                  })
+                }
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="invite">Send Invitation Email (User sets password)</option>
+                <option value="direct">Create Directly (Set password now)</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {formData.createType === 'invite'
+                  ? 'User will receive an email with activation link to set their password'
+                  : 'User will be created immediately with the password you set'}
+              </p>
+            </div>
+
+            {formData.createType === 'direct' && (
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password (min 8 characters)"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                />
+                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 8 characters with uppercase, lowercase, number, and
+                  special character.
+                </p>
+              </div>
+            )}
+
+            {formData.createType === 'invite' && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+                <div className="space-y-2">
+                  <Label htmlFor="emailFrom">Email Sender Address (Optional)</Label>
+                  <Input
+                    id="emailFrom"
+                    type="email"
+                    placeholder="noreply@example.com"
+                    value={formData.emailFrom}
+                    onChange={(e) => setFormData({ ...formData, emailFrom: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to use system default email. Can be different from account creation
+                    email.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emailFromName">Email Sender Name (Optional)</Label>
+                  <Input
+                    id="emailFromName"
+                    type="text"
+                    placeholder="BMS Team"
+                    value={formData.emailFromName}
+                    onChange={(e) => setFormData({ ...formData, emailFromName: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Display name for the email sender (e.g., &quot;Your Organization Name&quot;)
+                  </p>
+                </div>
+              </div>
+            )}
+
             {isSuperAdmin && (
               <div className="space-y-2">
                 <Label htmlFor="organizationId">
@@ -277,31 +375,12 @@ export default function InviteUserPage() {
             )}
 
             <div className="space-y-4">
-              <Label>
-                Roles <span className="text-destructive">*</span>
-              </Label>
-              <div className="space-y-3 border rounded-lg p-4">
-                {(Object.keys(ROLE_DESCRIPTIONS) as UserRole[]).map((role) => (
-                  <div key={role} className="flex items-start space-x-3">
-                    <Checkbox
-                      id={role}
-                      checked={formData.roles.includes(role)}
-                      onCheckedChange={() => handleRoleToggle(role)}
-                    />
-                    <div className="flex-1">
-                      <label
-                        htmlFor={role}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {role.replace(/_/g, ' ')}
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {ROLE_DESCRIPTIONS[role]}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <RoleSelector
+                selectedRoles={formData.roles}
+                onRolesChange={(roles) => setFormData({ ...formData, roles })}
+                allowedRoles={isOrgAdmin && !isSuperAdmin ? ORG_ADMIN_ALLOWED_ROLES : undefined}
+                showPermissionPreview={true}
+              />
               {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
             </div>
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getAuthContextFromCookies } from '@/lib/auth/session';
 import { isSuperAdmin } from '@/lib/auth/authz';
 import { getDb } from '@/lib/db';
@@ -208,13 +209,16 @@ export async function PATCH(request: NextRequest) {
       updates.description = body.description;
     }
 
-    const result = await collection.updateOne({ _id: new ObjectId(body.id) }, { $set: updates });
+    const result = await collection.updateOne(
+      { _id: new ObjectId(body.id) as any },
+      { $set: updates },
+    );
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Feature flag not found' }, { status: 404 });
     }
 
-    const updated = await collection.findOne({ _id: new ObjectId(body.id) });
+    const updated = await collection.findOne({ _id: new ObjectId(body.id) } as any);
 
     return NextResponse.json({
       message: 'Feature flag updated successfully',
@@ -257,7 +261,7 @@ export async function DELETE(request: NextRequest) {
     const collection = db.collection<FeatureFlag>(FEATURE_FLAGS_COLLECTION);
     const { ObjectId } = await import('mongodb');
 
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await collection.deleteOne({ _id: new ObjectId(id) } as any);
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Feature flag not found' }, { status: 404 });

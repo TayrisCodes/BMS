@@ -30,6 +30,10 @@ export default function NewUnitPage() {
   const buildingId = params.id as string;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedUnitType, setSelectedUnitType] = useState<string>('apartment');
+
+  // Check if bedrooms/bathrooms should be shown (only for apartments)
+  const showBedroomsBathrooms = selectedUnitType === 'apartment';
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,14 +42,23 @@ export default function NewUnitPage() {
 
     const formData = new FormData(event.currentTarget);
 
+    const unitType = formData.get('unitType')?.toString() || 'apartment';
+    const isApartment = unitType === 'apartment';
+
     const unitData = {
       buildingId,
       unitNumber: formData.get('unitNumber')?.toString() || '',
       floor: formData.get('floor') ? parseInt(formData.get('floor')!.toString()) : null,
-      unitType: formData.get('unitType')?.toString() || 'apartment',
+      unitType,
       area: formData.get('area') ? parseFloat(formData.get('area')!.toString()) : null,
-      bedrooms: formData.get('bedrooms') ? parseInt(formData.get('bedrooms')!.toString()) : null,
-      bathrooms: formData.get('bathrooms') ? parseInt(formData.get('bathrooms')!.toString()) : null,
+      bedrooms:
+        isApartment && formData.get('bedrooms')
+          ? parseInt(formData.get('bedrooms')!.toString())
+          : null,
+      bathrooms:
+        isApartment && formData.get('bathrooms')
+          ? parseFloat(formData.get('bathrooms')!.toString())
+          : null,
       status: formData.get('status')?.toString() || 'available',
       rentAmount: formData.get('rentAmount')
         ? parseFloat(formData.get('rentAmount')!.toString())
@@ -105,7 +118,12 @@ export default function NewUnitPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="unitType">Unit Type *</Label>
-                  <Select name="unitType" defaultValue="apartment" required>
+                  <Select
+                    name="unitType"
+                    defaultValue="apartment"
+                    required
+                    onValueChange={setSelectedUnitType}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -135,34 +153,38 @@ export default function NewUnitPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
+              <div className={showBedroomsBathrooms ? 'grid grid-cols-3 gap-4' : ''}>
+                <div className={showBedroomsBathrooms ? '' : 'w-full'}>
                   <Label htmlFor="area">Area (m²)</Label>
                   <Input id="area" name="area" type="number" step="0.01" placeholder="e.g., 50.5" />
                 </div>
 
-                <div>
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Input
-                    id="bedrooms"
-                    name="bedrooms"
-                    type="number"
-                    min="0"
-                    placeholder="e.g., 2"
-                  />
-                </div>
+                {showBedroomsBathrooms && (
+                  <>
+                    <div>
+                      <Label htmlFor="bedrooms">Bedrooms</Label>
+                      <Input
+                        id="bedrooms"
+                        name="bedrooms"
+                        type="number"
+                        min="0"
+                        placeholder="e.g., 2"
+                      />
+                    </div>
 
-                <div>
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Input
-                    id="bathrooms"
-                    name="bathrooms"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="e.g., 1.5"
-                  />
-                </div>
+                    <div>
+                      <Label htmlFor="bathrooms">Bathrooms</Label>
+                      <Input
+                        id="bathrooms"
+                        name="bathrooms"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="e.g., 1.5"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div>

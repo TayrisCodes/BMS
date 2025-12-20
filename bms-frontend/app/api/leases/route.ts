@@ -86,13 +86,24 @@ export async function GET(request: Request) {
         _id: l._id,
         tenantId: l.tenantId,
         unitId: l.unitId,
+        buildingId: l.buildingId,
         startDate: l.startDate,
         endDate: l.endDate,
-        rentAmount: l.rentAmount,
-        depositAmount: l.depositAmount,
         billingCycle: l.billingCycle,
         dueDay: l.dueDay,
+        rentAmount: l.rentAmount ?? l.terms?.rent,
+        depositAmount: l.depositAmount ?? l.terms?.deposit,
+        terms: l.terms,
         additionalCharges: l.additionalCharges,
+        penaltyConfig: l.penaltyConfig,
+        paymentDueDays: l.paymentDueDays,
+        renewalNoticeDays: l.renewalNoticeDays,
+        documents: l.documents,
+        termsTemplateId: l.termsTemplateId,
+        customTermsText: l.customTermsText,
+        termsAccepted: l.termsAccepted,
+        nextInvoiceDate: l.nextInvoiceDate,
+        lastInvoicedAt: l.lastInvoicedAt,
         status: l.status,
         terminationDate: l.terminationDate,
         terminationReason: l.terminationReason,
@@ -139,20 +150,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
     }
 
-    const body = (await request.json()) as Partial<CreateLeaseInput>;
+    const body = (await request.json()) as Partial<CreateLeaseInput> & {
+      includeParking?: boolean;
+      parkingSpaceId?: string | null;
+      preferredParkingSpaceIds?: string[] | null;
+      autoAssignParking?: boolean;
+    };
 
     // Validate required fields
     if (
       !body.tenantId ||
       !body.unitId ||
       !body.startDate ||
-      !body.rentAmount ||
       !body.billingCycle ||
-      body.dueDay === undefined
+      !body.terms?.rent
     ) {
       return NextResponse.json(
         {
-          error: 'tenantId, unitId, startDate, rentAmount, billingCycle, and dueDay are required',
+          error: 'tenantId, unitId, startDate, billingCycle, and terms.rent are required',
         },
         { status: 400 },
       );
@@ -163,18 +178,78 @@ export async function POST(request: Request) {
       organizationId,
       tenantId: body.tenantId,
       unitId: body.unitId,
+      buildingId: body.buildingId ?? null,
       startDate: body.startDate,
       endDate: body.endDate ?? null,
-      rentAmount: body.rentAmount,
-      depositAmount: body.depositAmount ?? null,
       billingCycle: body.billingCycle,
-      dueDay: body.dueDay,
+      dueDay: body.dueDay ?? null,
+      terms: body.terms,
       additionalCharges: body.additionalCharges ?? null,
+      penaltyConfig: body.penaltyConfig ?? null,
+      paymentDueDays: body.paymentDueDays ?? null,
+      renewalNoticeDays: body.renewalNoticeDays ?? null,
+      documents: body.documents ?? null,
+      termsTemplateId: body.termsTemplateId ?? null,
+      customTermsText: body.customTermsText ?? null,
       status: body.status ?? 'active',
     };
 
     try {
       const lease = await createLease(input);
+
+      // Optionally create parking assignment
+      if (body.includeParking) {
+        const parkingHelper = await import('@/lib/parking/parking-assignments');
+        const spacesHelper = await import('@/lib/parking/parking-spaces');
+        const unitHelper = await import('@/lib/units/units');
+
+        const unit = await unitHelper.findUnitById(body.unitId, organizationId);
+        const buildingId = unit?.buildingId;
+
+        // Resolve parking space
+        let parkingSpaceId: string | null = body.parkingSpaceId ?? null;
+        if (!parkingSpaceId && body.preferredParkingSpaceIds?.length) {
+          const preferred = await spacesHelper.getParkingSpacesCollection().then((col) =>
+            col
+              .find({
+                _id: { $in: body.preferredParkingSpaceIds },
+                organizationId,
+                status: 'available',
+              } as unknown as Record<string, unknown>)
+              .limit(1)
+              .toArray(),
+          );
+          parkingSpaceId = preferred[0]?._id?.toString() ?? null;
+        }
+        if (!parkingSpaceId && (body.autoAssignParking ?? true) && buildingId) {
+          const firstAvailable = await spacesHelper.getParkingSpacesCollection().then((col) =>
+            col
+              .find({ buildingId, organizationId, status: 'available' } as unknown as Record<
+                string,
+                unknown
+              >)
+              .limit(1)
+              .toArray(),
+          );
+          parkingSpaceId = firstAvailable[0]?._id?.toString() ?? null;
+        }
+
+        if (parkingSpaceId) {
+          try {
+            const assignment = await parkingHelper.createParkingAssignment({
+              organizationId,
+              parkingSpaceId,
+              assignmentType: 'tenant',
+              tenantId: body.tenantId,
+              startDate: body.startDate,
+              endDate: body.endDate ?? null,
+            });
+            lease.parkingAssignmentId = assignment._id;
+          } catch (err) {
+            console.warn('Parking assignment failed', err);
+          }
+        }
+      }
 
       return NextResponse.json(
         {
@@ -183,13 +258,25 @@ export async function POST(request: Request) {
             _id: lease._id,
             tenantId: lease.tenantId,
             unitId: lease.unitId,
+            buildingId: lease.buildingId,
             startDate: lease.startDate,
             endDate: lease.endDate,
-            rentAmount: lease.rentAmount,
-            depositAmount: lease.depositAmount,
             billingCycle: lease.billingCycle,
             dueDay: lease.dueDay,
+            rentAmount: lease.rentAmount ?? lease.terms?.rent,
+            depositAmount: lease.depositAmount ?? lease.terms?.deposit,
+            terms: lease.terms,
             additionalCharges: lease.additionalCharges,
+            penaltyConfig: lease.penaltyConfig,
+            paymentDueDays: lease.paymentDueDays,
+            renewalNoticeDays: lease.renewalNoticeDays,
+            documents: lease.documents,
+            termsTemplateId: lease.termsTemplateId,
+            customTermsText: lease.customTermsText,
+            termsAccepted: lease.termsAccepted,
+            nextInvoiceDate: lease.nextInvoiceDate,
+            lastInvoicedAt: lease.lastInvoicedAt,
+            parkingAssignmentId: lease.parkingAssignmentId,
             status: lease.status,
             terminationDate: lease.terminationDate,
             terminationReason: lease.terminationReason,

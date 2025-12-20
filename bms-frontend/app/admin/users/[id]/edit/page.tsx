@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/lib/components/ui/card';
-import { Checkbox } from '@/lib/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -24,6 +23,7 @@ import {
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
 import { apiGet } from '@/lib/utils/api-client';
 import type { UserRole, UserStatus } from '@/lib/auth/types';
+import { RoleSelector } from '@/components/users/RoleSelector';
 
 interface UserDetail {
   id: string;
@@ -34,18 +34,6 @@ interface UserDetail {
   status: UserStatus;
   organizationId?: string;
 }
-
-const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  SUPER_ADMIN: 'Platform owner with full system access',
-  ORG_ADMIN: 'Organization administrator',
-  BUILDING_MANAGER: 'Manages a specific building',
-  FACILITY_MANAGER: 'Manages maintenance and facility operations',
-  ACCOUNTANT: 'Manages financial operations',
-  SECURITY: 'Manages security and parking operations',
-  TECHNICIAN: 'Executes maintenance work orders',
-  TENANT: 'Tenant portal access',
-  AUDITOR: 'Read-only access for auditing',
-};
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -64,6 +52,8 @@ export default function EditUserPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isOrgAdmin, setIsOrgAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -87,16 +77,28 @@ export default function EditUserPage() {
 
   useEffect(() => {
     fetchUser();
+    async function checkPermissions() {
+      try {
+        const profile = await apiGet<{ roles: UserRole[] }>('/api/users/me');
+        const roles = profile.roles || [];
+        setIsOrgAdmin(roles.includes('ORG_ADMIN'));
+        setIsSuperAdmin(roles.includes('SUPER_ADMIN'));
+      } catch (err) {
+        console.error('Failed to check permissions:', err);
+      }
+    }
+    checkPermissions();
   }, [fetchUser]);
 
-  const handleRoleToggle = (role: UserRole) => {
-    setFormData((prev) => ({
-      ...prev,
-      roles: prev.roles.includes(role)
-        ? prev.roles.filter((r) => r !== role)
-        : [...prev.roles, role],
-    }));
-  };
+  // Roles that ORG_ADMIN can assign
+  const ORG_ADMIN_ALLOWED_ROLES: UserRole[] = [
+    'BUILDING_MANAGER',
+    'FACILITY_MANAGER',
+    'ACCOUNTANT',
+    'SECURITY',
+    'TECHNICIAN',
+    'AUDITOR',
+  ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -187,18 +189,6 @@ export default function EditUserPage() {
     );
   }
 
-  const allRoles: UserRole[] = [
-    'SUPER_ADMIN',
-    'ORG_ADMIN',
-    'BUILDING_MANAGER',
-    'FACILITY_MANAGER',
-    'ACCOUNTANT',
-    'SECURITY',
-    'TECHNICIAN',
-    'TENANT',
-    'AUDITOR',
-  ];
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -278,31 +268,12 @@ export default function EditUserPage() {
             </div>
 
             <div className="space-y-4">
-              <Label>
-                Roles <span className="text-destructive">*</span>
-              </Label>
-              <div className="space-y-3 border rounded-lg p-4">
-                {allRoles.map((role) => (
-                  <div key={role} className="flex items-start space-x-3">
-                    <Checkbox
-                      id={role}
-                      checked={formData.roles.includes(role)}
-                      onCheckedChange={() => handleRoleToggle(role)}
-                    />
-                    <div className="flex-1">
-                      <label
-                        htmlFor={role}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {role.replace(/_/g, ' ')}
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {ROLE_DESCRIPTIONS[role]}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <RoleSelector
+                selectedRoles={formData.roles}
+                onRolesChange={(roles) => setFormData({ ...formData, roles })}
+                allowedRoles={isOrgAdmin && !isSuperAdmin ? ORG_ADMIN_ALLOWED_ROLES : undefined}
+                showPermissionPreview={true}
+              />
               {errors.roles && <p className="text-sm text-destructive">{errors.roles}</p>}
             </div>
 

@@ -17,6 +17,9 @@ export interface Vehicle {
   color?: string | null;
   parkingSpaceId?: string | null; // ObjectId ref to parking spaces (current assignment)
   status: VehicleStatus;
+  isTemporary?: boolean; // Flag for temporary visitor vehicles
+  visitorLogId?: string | null; // ObjectId ref to visitor logs (for temporary vehicles)
+  expiresAt?: Date | null; // Expiration date for temporary vehicles
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -96,6 +99,9 @@ export interface CreateVehicleInput {
   color?: string | null;
   parkingSpaceId?: string | null;
   status?: VehicleStatus;
+  isTemporary?: boolean;
+  visitorLogId?: string | null;
+  expiresAt?: Date | null;
   notes?: string | null;
 }
 
@@ -133,6 +139,9 @@ export async function createVehicle(input: CreateVehicleInput): Promise<Vehicle>
     color: input.color ?? null,
     parkingSpaceId: input.parkingSpaceId ?? null,
     status: input.status ?? 'active',
+    isTemporary: input.isTemporary ?? false,
+    visitorLogId: input.visitorLogId ?? null,
+    expiresAt: input.expiresAt ?? null,
     notes: input.notes ?? null,
     createdAt: now,
     updatedAt: now,

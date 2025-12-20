@@ -89,6 +89,7 @@ export default function ComplaintDetailPage() {
     title: string;
     status: string;
   } | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   const fetchUserInfo = useCallback(async () => {
     try {
@@ -176,6 +177,40 @@ export default function ComplaintDetailPage() {
     }
   };
 
+  const handleConvertToWorkOrder = async () => {
+    try {
+      setIsConverting(true);
+      setError(null);
+
+      const response = await fetch(`/api/complaints/${complaintId}/convert-to-work-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to convert complaint to work order');
+      }
+
+      const data = await response.json();
+      setLinkedWorkOrder({
+        _id: data.workOrder._id,
+        title: data.workOrder.title,
+        status: data.workOrder.status,
+      });
+      // Refresh complaint to get updated status
+      await fetchComplaint();
+      router.push(`/org/work-orders/${data.workOrder._id}`);
+    } catch (err) {
+      console.error('Failed to convert complaint to work order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to convert complaint to work order');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleString('en-US', {
       year: 'numeric',
@@ -248,13 +283,12 @@ export default function ComplaintDetailPage() {
           {(userRoles.includes('FACILITY_MANAGER') ||
             userRoles.includes('BUILDING_MANAGER') ||
             userRoles.includes('ORG_ADMIN')) &&
-            !linkedWorkOrder && (
-              <Button
-                onClick={() => router.push(`/org/work-orders/new?complaintId=${complaintId}`)}
-                variant="default"
-              >
+            !linkedWorkOrder &&
+            complaint.status !== 'closed' &&
+            complaint.status !== 'resolved' && (
+              <Button onClick={handleConvertToWorkOrder} variant="default" disabled={isConverting}>
                 <Wrench className="h-4 w-4 mr-2" />
-                Create Work Order
+                {isConverting ? 'Converting...' : 'Create Work Order'}
               </Button>
             )}
           {linkedWorkOrder && (

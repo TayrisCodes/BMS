@@ -44,12 +44,12 @@ export async function getMongoClient(): Promise<MongoClient> {
     maxPoolSize: 10, // Maximum number of connections in the pool (safe for M0: 500 limit)
     minPoolSize: 2, // Minimum number of connections to maintain
     maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-    
+
     // Timeout settings
     serverSelectionTimeoutMS: 10000, // 10 seconds timeout for server selection
     connectTimeoutMS: 10000, // 10 seconds timeout for initial connection
     socketTimeoutMS: 45000, // 45 seconds timeout for socket operations
-    
+
     // Retry settings
     retryWrites: true,
     retryReads: true,
@@ -58,12 +58,12 @@ export async function getMongoClient(): Promise<MongoClient> {
   try {
     await newClient.connect();
     client = newClient;
-    
+
     // Store in global for development hot reload persistence
     if (process.env.NODE_ENV === 'development') {
       global._mongoClient = client;
     }
-    
+
     return client;
   } catch (error) {
     // Reset on connection failure
@@ -91,7 +91,7 @@ export async function getDb(): Promise<Db> {
 
   const mongoClient = await getMongoClient();
   db = mongoClient.db(); // uses the DB from the URI
-  
+
   // Store in global for development hot reload persistence
   if (process.env.NODE_ENV === 'development') {
     global._mongoDb = db;

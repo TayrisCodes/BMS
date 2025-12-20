@@ -64,6 +64,22 @@ const COMMANDS: Command[] = [
     keywords: ['users', 'people', 'staff'],
   },
   {
+    id: 'user-invite',
+    type: 'action',
+    title: 'Invite User',
+    path: '/admin/users/invite',
+    icon: Users,
+    keywords: ['invite', 'add user', 'new user'],
+  },
+  {
+    id: 'user-onboarding',
+    type: 'action',
+    title: 'User Onboarding',
+    path: '/admin/users/onboarding',
+    icon: Users,
+    keywords: ['onboarding', 'bulk users', 'import users'],
+  },
+  {
     id: 'subscriptions',
     type: 'action',
     title: 'Subscriptions',
@@ -241,7 +257,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             <div className="py-2">
               {filteredCommands.length > 0 && query.length < 2 && (
                 <>
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Quick Actions
                   </div>
                   {filteredCommands.map((cmd, index) => {
@@ -250,7 +266,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                     return (
                       <button
                         key={cmd.id}
-                        onClick={() => handleSelect(cmd)}
+                        onClick={() => handleSelect(cmd as any)}
                         className={cn(
                           'w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-accent transition-colors',
                           isSelected && 'bg-accent',
@@ -270,7 +286,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               {allResults.length > 0 && (
                 <>
                   {query.length >= 2 && (
-                    <div className="px-4 py-2 text-xs font-semibold text-muted-foreground">
+                    <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       {searchResults.length > 0 ? 'Search Results' : 'Quick Actions'}
                     </div>
                   )}
@@ -313,8 +329,3 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     </Dialog>
   );
 }
-
-
-
-
-

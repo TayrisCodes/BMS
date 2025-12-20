@@ -50,6 +50,7 @@ export interface SystemSettings {
         enabled: boolean;
         apiKey?: string;
         publicKey?: string;
+        webhookSecret?: string;
       };
       helloCash: {
         enabled: boolean;
@@ -127,7 +128,7 @@ export async function getSystemSettings(): Promise<SystemSettings> {
       createdAt: now,
       updatedAt: now,
     };
-    await collection.insertOne(defaultDoc as Document);
+    await collection.insertOne(defaultDoc as any);
     return defaultDoc as SystemSettings;
   }
 
@@ -187,8 +188,3 @@ export async function updateSystemSettingsSection(
     [section]: sectionData,
   } as Partial<SystemSettings>);
 }
-
-
-
-
-

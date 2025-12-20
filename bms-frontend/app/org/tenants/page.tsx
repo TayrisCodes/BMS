@@ -23,7 +23,7 @@ import {
 } from '@/lib/components/ui/select';
 import { apiGet, apiDelete } from '@/lib/utils/api-client';
 import { DashboardPage } from '@/lib/components/dashboard/DashboardPage';
-import { Users, Plus, Search, Edit, Trash2, Eye, Phone, Mail } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Eye, Phone, Mail, MessageSquare } from 'lucide-react';
 
 interface Tenant {
   _id: string;
@@ -114,7 +114,6 @@ export default function OrgTenantsPage() {
         return 'default';
     }
   }
-
 
   return (
     <DashboardPage
@@ -225,6 +224,11 @@ export default function OrgTenantsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
+                      <Link href={`/org/messages?tenantId=${tenant._id}`}>
+                        <Button variant="ghost" size="sm" title="Message Tenant">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Link href={`/admin/tenants/${tenant._id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
@@ -249,4 +253,3 @@ export default function OrgTenantsPage() {
     </DashboardPage>
   );
 }
-

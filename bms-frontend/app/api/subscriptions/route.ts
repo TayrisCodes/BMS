@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getAuthContextFromCookies } from '@/lib/auth/session';
 import { isSuperAdmin } from '@/lib/auth/authz';
 import {
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     const subscriptionsWithOrgNames = await Promise.all(
       subscriptions.map(async (sub) => {
         const org = await db.collection('organizations').findOne({
-          _id: sub.organizationId,
+          _id: new ObjectId(sub.organizationId),
         });
         return {
           id: sub._id.toString(),

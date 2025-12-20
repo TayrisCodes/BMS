@@ -57,7 +57,7 @@ export default function NewVisitorPage() {
   const [hostTenantId, setHostTenantId] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('');
   const [vehiclePlateNumber, setVehiclePlateNumber] = useState<string>('');
-  const [parkingSpaceId, setParkingSpaceId] = useState<string>('');
+  const [parkingSpaceId, setParkingSpaceId] = useState<string>('__none__');
 
   useEffect(() => {
     fetchBuildings();
@@ -137,7 +137,7 @@ export default function NewVisitorPage() {
         hostTenantId,
         purpose: purpose.trim(),
         vehiclePlateNumber: vehiclePlateNumber.trim().toUpperCase() || null,
-        parkingSpaceId: parkingSpaceId || null,
+        parkingSpaceId: parkingSpaceId === '__none__' ? null : parkingSpaceId,
       };
 
       const response = await fetch('/api/visitor-logs', {
@@ -264,9 +264,9 @@ export default function NewVisitorPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {filteredTenants.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
                       No tenants found
-                    </SelectItem>
+                    </div>
                   ) : (
                     filteredTenants.map((tenant) => (
                       <SelectItem key={tenant._id} value={tenant._id}>
@@ -315,7 +315,7 @@ export default function NewVisitorPage() {
                     <SelectValue placeholder="Select parking space (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {parkingSpaces.map((space) => (
                       <SelectItem key={space._id} value={space._id}>
                         {space.spaceNumber}

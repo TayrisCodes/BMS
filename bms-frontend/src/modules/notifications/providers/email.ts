@@ -51,6 +51,8 @@ export class EmailProvider {
     subject: string,
     body: string,
     htmlBody?: string,
+    customFrom?: string,
+    customFromName?: string,
   ): Promise<{ success: boolean; error?: string }> {
     if (!this.transporter) {
       return {
@@ -60,8 +62,9 @@ export class EmailProvider {
     }
 
     try {
-      const emailFromAddress = process.env.EMAIL_FROM_ADDRESS || 'tarikumy@gmail.com';
-      const emailFromName = process.env.EMAIL_FROM_NAME || 'BMS System';
+      // Use custom from address/name if provided, otherwise use defaults
+      const emailFromAddress = customFrom || process.env.EMAIL_FROM_ADDRESS || 'tarikumy@gmail.com';
+      const emailFromName = customFromName || process.env.EMAIL_FROM_NAME || 'BMS System';
 
       const mailOptions = {
         from: `"${emailFromName}" <${emailFromAddress}>`,
@@ -288,6 +291,71 @@ export class EmailProvider {
           }
         </table>
         <p>Please log in to your tenant portal to view details.</p>
+        <p>Thank you,<br>BMS System</p>
+      </div>
+    `;
+
+    return { subject, body, htmlBody };
+  }
+
+  /**
+   * Generate email template for visitor arrived notification.
+   */
+  generateVisitorArrivedEmail(
+    visitorName: string,
+    visitorPhone: string | null,
+    buildingName: string,
+    unitNumber: string | null,
+    floor: number | null,
+    entryTime: Date,
+  ): {
+    subject: string;
+    body: string;
+    htmlBody: string;
+  } {
+    const subject = 'Visitor Arrived';
+    const unitInfo = unitNumber ? `Unit ${unitNumber}${floor ? `, Floor ${floor}` : ''}` : '';
+    const visitorInfo = visitorPhone ? `${visitorName} (${visitorPhone})` : visitorName;
+
+    const body =
+      `Dear Tenant,\n\nA visitor has arrived at your building.\n\n` +
+      `Visitor: ${visitorInfo}\n` +
+      `Building: ${buildingName}\n` +
+      (unitInfo ? `Unit: ${unitInfo}\n` : '') +
+      `Entry Time: ${entryTime.toLocaleString()}\n\n` +
+      `Please check your tenant portal for more details.\n\n` +
+      `Thank you,\nBMS System`;
+
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Visitor Arrived</h2>
+        <p>Dear Tenant,</p>
+        <p>A visitor has arrived at your building.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Visitor:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${visitorInfo}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Building:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${buildingName}</td>
+          </tr>
+          ${
+            unitInfo
+              ? `
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Unit:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${unitInfo}</td>
+          </tr>
+          `
+              : ''
+          }
+          <tr>
+            <td style="padding: 8px; border: 1px solid #ddd;"><strong>Entry Time:</strong></td>
+            <td style="padding: 8px; border: 1px solid #ddd;">${entryTime.toLocaleString()}</td>
+          </tr>
+        </table>
+        <p>Please check your tenant portal for more details.</p>
         <p>Thank you,<br>BMS System</p>
       </div>
     `;

@@ -38,6 +38,12 @@ interface Unit {
   status: string;
 }
 
+interface ParkingSpace {
+  _id: string;
+  spaceNumber: string;
+  status: string;
+}
+
 export default function NewLeasePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +52,11 @@ export default function NewLeasePage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('');
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
+  const [includeParking, setIncludeParking] = useState(false);
+  const [parkingSpaces, setParkingSpaces] = useState<ParkingSpace[]>([]);
+  const [parkingSpaceId, setParkingSpaceId] = useState('');
+  const [preferredParkingSpaceIds, setPreferredParkingSpaceIds] = useState('');
+  const [autoAssignParking, setAutoAssignParking] = useState(true);
 
   useEffect(() => {
     async function fetchOptions() {
@@ -63,6 +74,40 @@ export default function NewLeasePage() {
     fetchOptions();
   }, []);
 
+  // Fetch available parking spaces for selected unit's building when parking is enabled
+  useEffect(() => {
+    async function fetchParkingSpaces() {
+      if (!includeParking || !selectedUnitId) {
+        setParkingSpaces([]);
+        setParkingSpaceId('');
+        return;
+      }
+
+      const unit = units.find((u) => u._id === selectedUnitId);
+      if (!unit) {
+        setParkingSpaces([]);
+        setParkingSpaceId('');
+        return;
+      }
+
+      try {
+        const res = await apiGet<{ parkingSpaces: ParkingSpace[] }>(
+          `/api/parking-spaces?buildingId=${unit.buildingId}&spaceType=tenant&status=available`,
+        );
+        setParkingSpaces(res?.parkingSpaces || []);
+        if (!parkingSpaceId && res?.parkingSpaces?.length) {
+          setParkingSpaceId(res.parkingSpaces[0]!._id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch parking spaces for lease creation', err);
+        setParkingSpaces([]);
+      }
+    }
+
+    fetchParkingSpaces();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeParking, selectedUnitId]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -75,12 +120,49 @@ export default function NewLeasePage() {
       unitId: selectedUnitId,
       startDate: formData.get('startDate')?.toString() || '',
       endDate: formData.get('endDate')?.toString() || null,
-      rentAmount: parseFloat(formData.get('rentAmount')?.toString() || '0'),
-      depositAmount: formData.get('depositAmount')
-        ? parseFloat(formData.get('depositAmount')!.toString())
-        : null,
       billingCycle: formData.get('billingCycle')?.toString() || 'monthly',
-      dueDay: parseInt(formData.get('dueDay')?.toString() || '1'),
+      dueDay: formData.get('dueDay') ? parseInt(formData.get('dueDay')!.toString(), 10) : null,
+      terms: {
+        rent: parseFloat(formData.get('rentAmount')?.toString() || '0'),
+        serviceCharges: formData.get('serviceCharges')
+          ? parseFloat(formData.get('serviceCharges')!.toString())
+          : undefined,
+        deposit: formData.get('depositAmount')
+          ? parseFloat(formData.get('depositAmount')!.toString())
+          : undefined,
+        currency: 'ETB',
+        vatIncluded: formData.get('vatIncluded') === 'on',
+        vatRate: formData.get('vatRate')
+          ? parseFloat(formData.get('vatRate')!.toString())
+          : undefined,
+      },
+      penaltyConfig: {
+        lateFeeRatePerDay: formData.get('lateFeeRatePerDay')
+          ? parseFloat(formData.get('lateFeeRatePerDay')!.toString())
+          : undefined,
+        lateFeeGraceDays: formData.get('lateFeeGraceDays')
+          ? parseInt(formData.get('lateFeeGraceDays')!.toString(), 10)
+          : undefined,
+        lateFeeCapDays: formData.get('lateFeeCapDays')
+          ? parseInt(formData.get('lateFeeCapDays')!.toString(), 10)
+          : undefined,
+      },
+      paymentDueDays: formData.get('paymentDueDays')
+        ? parseInt(formData.get('paymentDueDays')!.toString(), 10)
+        : undefined,
+      renewalNoticeDays: formData.get('renewalNoticeDays')
+        ? parseInt(formData.get('renewalNoticeDays')!.toString(), 10)
+        : undefined,
+      customTermsText: formData.get('customTermsText')?.toString() || undefined,
+      includeParking,
+      parkingSpaceId: parkingSpaceId || undefined,
+      preferredParkingSpaceIds: preferredParkingSpaceIds
+        ? preferredParkingSpaceIds
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
+      autoAssignParking,
     };
 
     try {
@@ -211,9 +293,150 @@ export default function NewLeasePage() {
                     min="1"
                     max="31"
                     defaultValue="1"
-                    required
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="serviceCharges">Service Charges (ETB)</Label>
+                  <Input id="serviceCharges" name="serviceCharges" type="number" step="0.01" />
+                </div>
+                <div>
+                  <Label htmlFor="paymentDueDays">Payment Due Days</Label>
+                  <Input
+                    id="paymentDueDays"
+                    name="paymentDueDays"
+                    type="number"
+                    min="1"
+                    placeholder="e.g., 7"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="vatRate">VAT Rate (%)</Label>
+                  <Input id="vatRate" name="vatRate" type="number" step="0.01" defaultValue="15" />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Input id="vatIncluded" name="vatIncluded" type="checkbox" className="w-4" />
+                  <Label htmlFor="vatIncluded">VAT Included in rent</Label>
+                </div>
+                <div>
+                  <Label htmlFor="renewalNoticeDays">Renewal Notice Days</Label>
+                  <Input
+                    id="renewalNoticeDays"
+                    name="renewalNoticeDays"
+                    type="number"
+                    min="0"
+                    placeholder="e.g., 30"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="lateFeeRatePerDay">Late Fee Rate (per day, e.g., 0.0005)</Label>
+                  <Input
+                    id="lateFeeRatePerDay"
+                    name="lateFeeRatePerDay"
+                    type="number"
+                    step="0.0001"
+                    defaultValue="0.0005"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lateFeeGraceDays">Late Fee Grace Days</Label>
+                  <Input
+                    id="lateFeeGraceDays"
+                    name="lateFeeGraceDays"
+                    type="number"
+                    min="0"
+                    defaultValue="0"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lateFeeCapDays">Late Fee Cap Days</Label>
+                  <Input id="lateFeeCapDays" name="lateFeeCapDays" type="number" min="0" />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="customTermsText">Custom Terms & Conditions (optional)</Label>
+                <textarea
+                  id="customTermsText"
+                  name="customTermsText"
+                  className="mt-2 w-full rounded-md border border-input bg-background p-3 text-sm"
+                  rows={4}
+                  placeholder="Add lease-specific terms or penalties..."
+                />
+              </div>
+
+              <div className="space-y-3 rounded-lg border p-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    id="includeParking"
+                    name="includeParking"
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={includeParking}
+                    onChange={(e) => setIncludeParking(e.target.checked)}
+                  />
+                  <Label htmlFor="includeParking">Include parking assignment</Label>
+                </div>
+                {includeParking && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="parkingSpaceId">Select parking space (optional)</Label>
+                      <Select
+                        value={parkingSpaceId}
+                        onValueChange={setParkingSpaceId}
+                        name="parkingSpaceId"
+                      >
+                        <SelectTrigger id="parkingSpaceId">
+                          <SelectValue placeholder="Select parking space (or leave for auto-assign)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {parkingSpaces.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">
+                              No available parking spaces for this building
+                            </div>
+                          ) : (
+                            parkingSpaces.map((space) => (
+                              <SelectItem key={space._id} value={space._id}>
+                                {space.spaceNumber} ({space.status})
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="preferredParkingSpaceIds">
+                        Preferred parking spaces (comma-separated IDs)
+                      </Label>
+                      <Input
+                        id="preferredParkingSpaceIds"
+                        name="preferredParkingSpaceIds"
+                        value={preferredParkingSpaceIds}
+                        onChange={(e) => setPreferredParkingSpaceIds(e.target.value)}
+                        placeholder="e.g., id1, id2"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="autoAssignParking"
+                        name="autoAssignParking"
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={autoAssignParking}
+                        onChange={(e) => setAutoAssignParking(e.target.checked)}
+                      />
+                      <Label htmlFor="autoAssignParking">Auto-assign first available space</Label>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

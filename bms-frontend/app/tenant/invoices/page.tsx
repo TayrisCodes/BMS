@@ -16,6 +16,11 @@ interface Invoice {
   dueDate: string;
   status: string;
   createdAt: string;
+  subtotal?: number;
+  tax?: number;
+  vatRate?: number;
+  netIncomeBeforeVat?: number;
+  netIncomeAfterVat?: number;
 }
 
 export default function TenantInvoicesPage() {

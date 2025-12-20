@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const buildingId = searchParams.get('buildingId'); // Optional, for future use
     const search = searchParams.get('search');
+    const organizationId = searchParams.get('organizationId'); // For SUPER_ADMIN filtering
 
     // Only SUPER_ADMIN can see all users
     // Others see users in their organization
@@ -57,6 +58,9 @@ export async function GET(request: NextRequest) {
     // Organization scoping (unless SUPER_ADMIN)
     if (!isSuperAdmin(context)) {
       query.organizationId = context.organizationId;
+    } else if (organizationId) {
+      // SUPER_ADMIN can filter by specific organization
+      query.organizationId = organizationId;
     }
 
     // Role filter
@@ -96,15 +100,33 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .toArray();
 
+    // Get organization names for all unique organizationIds
+    const orgIds = [...new Set(users.map((u) => u.organizationId).filter(Boolean))];
+    const orgMap = new Map<string, string>();
+    if (orgIds.length > 0) {
+      const { ObjectId } = await import('mongodb');
+      const orgs = await db
+        .collection('organizations')
+        .find({
+          _id: { $in: orgIds.map((id) => new ObjectId(id)) },
+        })
+        .toArray();
+      orgs.forEach((org: any) => {
+        orgMap.set(org._id.toString(), org.name || 'Unknown');
+      });
+    }
+
     return NextResponse.json({
       users: users.map((user) => ({
         id: user._id.toString(),
         organizationId: user.organizationId,
+        organizationName: user.organizationId ? orgMap.get(user.organizationId) || null : null,
         email: user.email,
         phone: user.phone,
         name: user.name,
         roles: user.roles || [],
         status: user.status || 'active',
+        lastLoginAt: user.lastLoginAt || null,
         createdAt: user.createdAt || new Date(),
         updatedAt: user.updatedAt || new Date(),
       })),

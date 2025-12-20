@@ -26,8 +26,23 @@ export interface Building {
     amenities?: string[];
     [key: string]: unknown;
   } | null;
+  rentPolicy?: BuildingRentPolicy | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface FloorOverride {
+  floor: number;
+  ratePerSqm: number;
+}
+
+export interface BuildingRentPolicy {
+  baseRatePerSqm: number;
+  decrementPerFloor?: number | null;
+  groundFloorMultiplier?: number | null;
+  minRatePerSqm?: number | null;
+  effectiveDate?: Date | null;
+  floorOverrides?: FloorOverride[] | null;
 }
 
 export async function getBuildingsCollection(): Promise<Collection<Building>> {
@@ -55,6 +70,11 @@ export async function ensureBuildingIndexes(db?: Db): Promise<void> {
     {
       key: { organizationId: 1 },
       name: 'organizationId',
+    },
+    // Index rent policy effective date for querying active policy
+    {
+      key: { 'rentPolicy.effectiveDate': 1 },
+      name: 'rentPolicy_effectiveDate',
     },
   ];
 
