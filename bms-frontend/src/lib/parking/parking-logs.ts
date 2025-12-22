@@ -239,4 +239,3 @@ export async function findLastEntryLog(
 
   return collection.findOne(query as Document, { sort: { timestamp: -1 } });
 }
-

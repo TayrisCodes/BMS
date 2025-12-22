@@ -424,4 +424,3 @@ export default function SecurityManagementPage() {
     </DashboardPage>
   );
 }
-

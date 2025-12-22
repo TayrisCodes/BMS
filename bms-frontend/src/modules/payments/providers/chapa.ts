@@ -162,7 +162,7 @@ export class ChapaProvider extends BasePaymentProvider {
       return {
         success: true,
         referenceNumber: reference,
-        amount: metadata?.amount as number | undefined,
+        ...(metadata?.amount !== undefined ? { amount: metadata.amount as number } : {}),
         metadata: {
           mock: true,
           provider: 'chapa',

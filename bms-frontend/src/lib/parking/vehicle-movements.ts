@@ -192,4 +192,3 @@ export async function listVehicleMovements(
     .sort({ timestamp: -1 })
     .toArray();
 }
-

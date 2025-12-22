@@ -42,4 +42,3 @@ export function HelpIcon({ content, className, side = 'top', variant = 'default'
     </TooltipProvider>
   );
 }
-

@@ -89,7 +89,7 @@ export default function OrganizationSettingsPage() {
     setSuccess(null);
 
     try {
-      const response = await apiPatch('/api/organizations/me', {
+      const response = await apiPatch<{ organization?: Organization }>('/api/organizations/me', {
         name,
         contactInfo: {
           email: email || undefined,

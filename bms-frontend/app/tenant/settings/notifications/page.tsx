@@ -131,7 +131,7 @@ export default function NotificationPreferencesPage() {
 
   if (isLoading) {
     return (
-      <DashboardPage title="Notification Preferences" icon={<Bell className="h-5 w-5" />}>
+      <DashboardPage title="Notification Preferences">
         <div className="text-center py-8">
           <p className="text-muted-foreground">Loading preferences...</p>
         </div>
@@ -140,13 +140,7 @@ export default function NotificationPreferencesPage() {
   }
 
   return (
-    <DashboardPage
-      header={{
-        title: 'Notification Preferences',
-        description: 'Customize how you receive notifications',
-        icon: Bell,
-      }}
-    >
+    <DashboardPage title="Notification Preferences">
       <div className="col-span-full space-y-6">
         {error && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{error}</div>}
         {success && (

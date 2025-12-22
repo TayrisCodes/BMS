@@ -23,6 +23,8 @@ export const PERMISSIONS: Record<
     reporting: string[];
     users: string[];
     settings: string[];
+    notices: string[];
+    notifications: string[];
   }
 > = {
   SUPER_ADMIN: {
@@ -42,6 +44,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_cross_org', 'system_health', 'all_metrics'],
     users: ['create_org_admin', 'read_all', 'list_all'],
     settings: ['read', 'write'],
+    notices: ['read_all', 'list_all'],
+    notifications: ['read_all', 'list_all'],
   },
   ORG_ADMIN: {
     organizations: ['read', 'update'],
@@ -60,6 +64,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_org', 'export'],
     users: ['create', 'read', 'update', 'delete', 'list', 'assign_roles'],
     settings: ['read', 'write'],
+    notices: ['create', 'read', 'update', 'delete', 'list'],
+    notifications: ['read', 'list'],
   },
   BUILDING_MANAGER: {
     organizations: ['read'],
@@ -78,6 +84,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_building'],
     users: ['read', 'list'],
     settings: [],
+    notices: ['read', 'create', 'update', 'list'],
+    notifications: ['read', 'list'],
   },
   FACILITY_MANAGER: {
     organizations: ['read'],
@@ -96,6 +104,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_facility'],
     users: ['read', 'list'],
     settings: [],
+    notices: ['read', 'create', 'update', 'list'],
+    notifications: ['read', 'list'],
   },
   ACCOUNTANT: {
     organizations: ['read'],
@@ -114,6 +124,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_financial', 'export'],
     users: ['read', 'list'],
     settings: [],
+    notices: ['read', 'list'],
+    notifications: ['read', 'list'],
   },
   SECURITY: {
     organizations: ['read'],
@@ -132,6 +144,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_security'],
     users: ['read'],
     settings: [],
+    notices: ['read', 'list'],
+    notifications: ['read', 'list'],
   },
   TECHNICIAN: {
     organizations: ['read'],
@@ -150,6 +164,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_work'],
     users: ['read'],
     settings: [],
+    notices: ['read', 'list'],
+    notifications: ['read', 'list'],
   },
   TENANT: {
     organizations: ['read'],
@@ -168,6 +184,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_own'],
     users: [],
     settings: [],
+    notices: ['read_own', 'list_own'],
+    notifications: ['read_own', 'list_own'],
   },
   AUDITOR: {
     organizations: ['read'],
@@ -186,6 +204,8 @@ export const PERMISSIONS: Record<
     reporting: ['view_all', 'export'],
     users: ['read', 'list'],
     settings: [],
+    notices: ['read', 'list'],
+    notifications: ['read', 'list'],
   },
 };
 

@@ -80,10 +80,11 @@ export async function GET(request: NextRequest) {
     // Get user details for top active users
     const userIds = userActivityCounts.map((u) => u._id).filter(Boolean);
     const { ObjectId } = await import('mongodb');
+    const userIdObjects = userIds.map((id) => new ObjectId(id as string));
     const users = await usersCollection
       .find({
-        _id: { $in: userIds.map((id) => new ObjectId(id as string)) },
-      })
+        _id: { $in: userIdObjects },
+      } as any)
       .toArray();
 
     const userMap = new Map<string, any>();

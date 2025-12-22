@@ -41,13 +41,12 @@ export async function PUT(request: Request, routeParams: RouteParams) {
       return NextResponse.json({ error: 'Currency not found' }, { status: 404 });
     }
 
-    const input: UpdateCurrencyInput = {
-      code: body.code,
-      symbol: body.symbol,
-      exchangeRate: body.exchangeRate,
-      isPrimary: body.isPrimary,
-      isActive: body.isActive,
-    };
+    const input: UpdateCurrencyInput = {};
+    if (body.code !== undefined) input.code = body.code;
+    if (body.symbol !== undefined) input.symbol = body.symbol;
+    if (body.exchangeRate !== undefined) input.exchangeRate = body.exchangeRate;
+    if (body.isPrimary !== undefined) input.isPrimary = body.isPrimary;
+    if (body.isActive !== undefined) input.isActive = body.isActive;
 
     try {
       const updatedCurrency = await updateCurrency(existingCurrency._id, input, organizationId);
@@ -95,4 +94,3 @@ export async function PUT(request: Request, routeParams: RouteParams) {
     );
   }
 }
-

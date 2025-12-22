@@ -38,7 +38,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey,
+      applicationServerKey: applicationServerKey as BufferSource,
     });
 
     // Send subscription to server
@@ -137,4 +137,3 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   }
   return outputArray;
 }
-

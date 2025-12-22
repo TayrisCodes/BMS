@@ -24,7 +24,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const vehicle = await findVehicleById(params.id, context.organizationId);
     if (!vehicle) {
@@ -54,4 +57,3 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to fetch vehicle history' }, { status: 500 });
   }
 }
-

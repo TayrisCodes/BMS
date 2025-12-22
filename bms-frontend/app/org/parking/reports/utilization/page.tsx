@@ -58,7 +58,9 @@ export default function UtilizationReportPage() {
         const data = await apiGet<{ buildings: Building[] }>('/api/buildings');
         setBuildings(data.buildings || []);
         if (data.buildings && data.buildings.length > 0) {
-          setSelectedBuilding(data.buildings[0]._id);
+          if (data.buildings[0]) {
+            setSelectedBuilding(data.buildings[0]._id);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load buildings');
@@ -73,11 +75,10 @@ export default function UtilizationReportPage() {
 
       try {
         setIsLoading(true);
-        const params = new URLSearchParams({
-          buildingId: selectedBuilding,
-          startDate,
-          endDate,
-        });
+        const params = new URLSearchParams();
+        if (selectedBuilding) params.set('buildingId', selectedBuilding);
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
         const data = await apiGet<{
           statistics: UtilizationStatistics;
           trends: UtilizationTrendDataPoint[];
@@ -95,13 +96,7 @@ export default function UtilizationReportPage() {
   }, [selectedBuilding, startDate, endDate]);
 
   return (
-    <DashboardPage
-      header={{
-        title: 'Parking Utilization Report',
-        description: 'Analyze parking space utilization and trends',
-        icon: TrendingUp,
-      }}
-    >
+    <DashboardPage title="Parking Utilization Report">
       <div className="col-span-full space-y-6">
         <Card>
           <CardHeader>
@@ -329,4 +324,3 @@ export default function UtilizationReportPage() {
     </DashboardPage>
   );
 }
-

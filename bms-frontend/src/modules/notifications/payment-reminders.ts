@@ -215,4 +215,3 @@ export async function processPaymentReminders(organizationId: string): Promise<{
     errors,
   };
 }
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { Label } from '@/lib/components/ui/label';
@@ -50,19 +50,13 @@ interface AgingReport {
 export default function AgingReportPage() {
   const [report, setReport] = useState<AgingReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [asOfDate, setAsOfDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [asOfDate, setAsOfDate] = useState<string>(new Date().toISOString().split('T')[0]!);
   const [buildingId, setBuildingId] = useState<string>('');
   const [tenantId, setTenantId] = useState<string>('');
   const [buildings, setBuildings] = useState<Array<{ _id: string; name: string }>>([]);
   const [tenants, setTenants] = useState<
     Array<{ _id: string; firstName: string; lastName: string }>
   >([]);
-
-  useEffect(() => {
-    fetchBuildings();
-    fetchTenants();
-    generateReport();
-  }, []);
 
   async function fetchBuildings() {
     try {
@@ -86,7 +80,7 @@ export default function AgingReportPage() {
     }
   }
 
-  async function generateReport() {
+  const generateReport = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -101,7 +95,13 @@ export default function AgingReportPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [asOfDate, buildingId, tenantId]);
+
+  useEffect(() => {
+    fetchBuildings();
+    fetchTenants();
+    generateReport();
+  }, [generateReport]);
 
   const bucketColors: Record<string, string> = {
     current: 'bg-green-100 text-green-800',

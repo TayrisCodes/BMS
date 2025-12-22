@@ -101,7 +101,10 @@ export default function VisitorDetailPage() {
             `/api/security/incidents?linkedVisitorLogId=${id}`,
           );
           if (incidentsData.incidents && incidentsData.incidents.length > 0) {
-            setLinkedIncident(incidentsData.incidents[0]);
+            const firstIncident = incidentsData.incidents[0];
+            if (firstIncident) {
+              setLinkedIncident(firstIncident);
+            }
           }
         } catch (err) {
           console.error('Failed to fetch linked incidents', err);
@@ -288,4 +291,3 @@ export default function VisitorDetailPage() {
     </div>
   );
 }
-

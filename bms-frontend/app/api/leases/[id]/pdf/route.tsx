@@ -38,13 +38,13 @@ export async function GET(request: Request, routeParams: RouteParams) {
   const doc = await pdf(
     <LeasePdf
       lease={lease}
-      tenant={tenant ?? undefined}
-      unit={unit ?? undefined}
-      building={building ?? undefined}
+      {...(tenant && { tenant })}
+      {...(unit && { unit })}
+      {...(building && { building })}
     />,
   ).toBuffer();
 
-  return new Response(doc, {
+  return new NextResponse(doc as unknown as BodyInit, {
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',

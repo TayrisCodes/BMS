@@ -9,7 +9,7 @@ import { ParkingMeter, AlertTriangle, Clock, LogIn } from 'lucide-react';
 
 export default function SecurityParkingPage() {
   return (
-    <SecurityMobileLayout title="Parking">
+    <SecurityMobileLayout>
       <div className="space-y-4 p-4">
         <div className="grid grid-cols-2 gap-4">
           <Link href="/security/parking/log-entry">
@@ -58,4 +58,3 @@ export default function SecurityParkingPage() {
     </SecurityMobileLayout>
   );
 }
-

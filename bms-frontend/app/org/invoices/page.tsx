@@ -79,6 +79,7 @@ interface Tenant {
   _id: string;
   firstName: string;
   lastName: string;
+  primaryPhone?: string;
 }
 
 interface Unit {
@@ -215,8 +216,8 @@ export default function OrgInvoicesPage() {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    setPeriodStart(start.toISOString().split('T')[0]);
-    setPeriodEnd(end.toISOString().split('T')[0]);
+    setPeriodStart(start.toISOString().split('T')[0] || '');
+    setPeriodEnd(end.toISOString().split('T')[0] || '');
   }, []);
 
   // Fetch tenants when dialog opens

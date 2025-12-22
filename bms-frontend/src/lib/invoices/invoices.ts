@@ -299,7 +299,6 @@ export async function createInvoice(input: CreateInvoiceInput): Promise<Invoice>
     total,
     netIncomeBeforeVat,
     netIncomeAfterVat,
-    total,
     status: input.status ?? 'draft',
     paidAt: null,
     notes: input.notes ?? null,
@@ -665,7 +664,9 @@ export async function createAdHocInvoice(input: CreateAdHocInvoiceInput): Promis
     const activeLease = leases.find(
       (lease) =>
         lease.status === 'active' &&
-        (lease.endDate === null || new Date(lease.endDate) >= new Date()),
+        (lease.endDate === null ||
+          lease.endDate === undefined ||
+          (lease.endDate && new Date(lease.endDate) >= new Date())),
     );
     if (activeLease) {
       leaseId = activeLease._id;
@@ -778,7 +779,9 @@ export async function createParkingInvoice(input: CreateParkingInvoiceInput): Pr
     const activeLease = leases.find(
       (lease) =>
         lease.status === 'active' &&
-        (lease.endDate === null || new Date(lease.endDate) >= new Date()),
+        (lease.endDate === null ||
+          lease.endDate === undefined ||
+          (lease.endDate && new Date(lease.endDate) >= new Date())),
     );
 
     if (!activeLease) {

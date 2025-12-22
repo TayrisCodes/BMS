@@ -5,6 +5,7 @@ import { MobileCard } from '@/lib/components/tenant/MobileCard';
 import { Button } from '@/lib/components/ui/button';
 import { ChevronDown, ChevronUp, Download, Eye, FileText, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/lib/utils';
+import Image from 'next/image';
 
 interface LeaseData {
   id: string;
@@ -283,7 +284,7 @@ export default function TenantLeasePage() {
             <div className="pt-3">
               <Button
                 onClick={handleAcceptTerms}
-                disabled={accepting || hasAccepted}
+                disabled={accepting || !!hasAccepted}
                 className="w-full"
               >
                 {hasAccepted ? 'Terms Accepted' : accepting ? 'Submitting...' : 'Accept Terms'}
@@ -448,12 +449,16 @@ export default function TenantLeasePage() {
               </Button>
             </div>
             {previewingDoc.contentType.startsWith('image/') ? (
-              <img
-                src={previewingDoc.url}
-                alt={previewingDoc.filename}
-                className="w-full h-full object-contain"
-                onClick={(e) => e.stopPropagation()}
-              />
+              <div className="relative w-full h-full">
+                <Image
+                  src={previewingDoc.url}
+                  alt={previewingDoc.filename}
+                  fill
+                  className="object-contain"
+                  sizes="90vw"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
             ) : (
               <iframe
                 src={previewingDoc.url}

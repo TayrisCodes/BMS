@@ -44,4 +44,3 @@ export async function GET(request: Request, routeParams: RouteParams) {
     return NextResponse.json({ error: 'Failed to fetch document' }, { status: 500 });
   }
 }
-

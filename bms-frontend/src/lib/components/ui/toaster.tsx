@@ -13,9 +13,9 @@ export function Toaster() {
         <Toast
           key={toast.id}
           id={toast.id}
-          title={toast.title}
-          description={toast.description}
-          variant={toast.variant}
+          {...(toast.title ? { title: toast.title } : {})}
+          {...(toast.description ? { description: toast.description } : {})}
+          {...(toast.variant ? { variant: toast.variant } : {})}
           onClose={() => dismiss(toast.id)}
         />
       ))}

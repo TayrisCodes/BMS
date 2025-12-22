@@ -258,4 +258,3 @@ export default function MonitoringPage() {
     </DashboardPage>
   );
 }
-

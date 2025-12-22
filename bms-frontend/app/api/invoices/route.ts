@@ -355,6 +355,7 @@ export async function POST(request: Request) {
           message: 'Invoice generated successfully',
           invoice: {
             _id: invoice._id,
+            organizationId: invoice.organizationId,
             leaseId: invoice.leaseId,
             tenantId: invoice.tenantId,
             unitId: invoice.unitId,
@@ -365,11 +366,11 @@ export async function POST(request: Request) {
             periodEnd: invoice.periodEnd,
             items: invoice.items,
             subtotal: invoice.subtotal,
-            tax: invoice.tax,
+            tax: invoice.tax ?? null,
             total: invoice.total,
             status: invoice.status,
-            paidAt: invoice.paidAt,
-            notes: invoice.notes,
+            paidAt: invoice.paidAt ?? null,
+            notes: invoice.notes ?? null,
             createdAt: invoice.createdAt,
             updatedAt: invoice.updatedAt,
           },
@@ -387,20 +388,23 @@ export async function POST(request: Request) {
 
         // Include send status if available
         if (sendResult) {
+          const channels: {
+            in_app?: { sent: boolean };
+            sms?: { sent: boolean; delivered: boolean };
+          } = {};
+          if (sendResult.channels.in_app) {
+            channels.in_app = { sent: sendResult.channels.in_app.sent };
+          }
+          if (sendResult.channels.sms) {
+            channels.sms = {
+              sent: sendResult.channels.sms.sent,
+              delivered: sendResult.channels.sms.delivered,
+            };
+          }
           response.sent = {
             success: sendResult.success,
-            channels: {
-              in_app: sendResult.channels.in_app
-                ? { sent: sendResult.channels.in_app.sent }
-                : undefined,
-              sms: sendResult.channels.sms
-                ? {
-                    sent: sendResult.channels.sms.sent,
-                    delivered: sendResult.channels.sms.delivered,
-                  }
-                : undefined,
-            },
-            errors: sendResult.errors,
+            channels,
+            ...(sendResult.errors && { errors: sendResult.errors }),
           };
         }
 

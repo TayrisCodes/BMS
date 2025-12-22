@@ -100,7 +100,7 @@ export default function NewLeasePage() {
           `/api/parking-spaces?buildingId=${unit.buildingId}&spaceType=tenant&status=available`,
         );
         setParkingSpaces(res.parkingSpaces || []);
-        if (!parkingSpaceId && res.parkingSpaces?.length) {
+        if (!parkingSpaceId && res.parkingSpaces?.length && res.parkingSpaces[0]) {
           setParkingSpaceId(res.parkingSpaces[0]._id);
         }
       } catch (err) {

@@ -68,7 +68,7 @@ export function BotInterface({ className }: BotInterfaceProps) {
     try {
       // Execute command via API
       const args = commandInput.split(' ').slice(1);
-      const command = commandInput.split(' ')[0].replace('/', '');
+      const command = commandInput.split(' ')[0]!.replace('/', '');
 
       const response = await fetch('/api/bot/commands', {
         method: 'POST',

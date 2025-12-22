@@ -35,7 +35,7 @@ export default function SecurityShiftsPage() {
         setLoading(true);
         const data = await apiGet<{ shifts: Shift[] }>('/api/security/shifts?active=true');
         const activeShifts = data.shifts || [];
-        setActiveShift(activeShifts.length > 0 ? activeShifts[0] : null);
+        setActiveShift(activeShifts.length > 0 && activeShifts[0] ? activeShifts[0] : null);
 
         const allData = await apiGet<{ shifts: Shift[] }>('/api/security/shifts?status=scheduled');
         setShifts(allData.shifts || []);
@@ -184,4 +184,3 @@ export default function SecurityShiftsPage() {
     </SecurityMobileLayout>
   );
 }
-

@@ -65,7 +65,7 @@ export async function GET(request: Request, routeParams: RouteParams) {
     ).toBuffer();
 
     // Return PDF as response
-    return new Response(doc, {
+    return new NextResponse(doc as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

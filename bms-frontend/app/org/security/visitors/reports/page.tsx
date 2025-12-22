@@ -106,11 +106,7 @@ export default function VisitorReportsPage() {
   }, [filters]);
 
   return (
-    <DashboardPage
-      title="Visitor Reports & Analytics"
-      description="View visitor statistics and trends"
-      icon={<Users className="h-5 w-5" />}
-    >
+    <DashboardPage title="Visitor Reports & Analytics">
       <div className="col-span-full space-y-6">
         <Card>
           <CardHeader>
@@ -328,4 +324,3 @@ export default function VisitorReportsPage() {
     </DashboardPage>
   );
 }
-

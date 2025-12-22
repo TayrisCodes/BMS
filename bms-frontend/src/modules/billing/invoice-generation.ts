@@ -159,10 +159,10 @@ function generateInvoiceItemsFromLease(
   );
 
   const vatRate = lease.vatRate ?? 15; // Default 15% VAT
-  let rentAmount = lease.rentAmount;
+  let rentAmount = lease.rentAmount ?? 0;
 
   // If VAT is included in rentAmount, extract the base amount
-  if (lease.vatIncluded === true) {
+  if (lease.vatIncluded === true && rentAmount) {
     // rentAmount = baseAmount * (1 + vatRate/100)
     // baseAmount = rentAmount / (1 + vatRate/100)
     rentAmount = Math.round(rentAmount / (1 + vatRate / 100));
@@ -314,7 +314,7 @@ export async function generateInvoicesForLeases(
 
       // Calculate due date based on lease dueDay
       const issueDate = new Date(); // Issue date is today
-      const dueDate = calculateDueDate(issueDate, lease.dueDay);
+      const dueDate = calculateDueDate(issueDate, lease.dueDay ?? 1);
 
       // Get VAT rate from lease (default: 15%)
       const vatRate = lease.vatRate ?? 15;
@@ -384,7 +384,7 @@ export async function generateInvoiceForLease(
   // If custom items provided, use them
   if (customItems && customItems.length > 0) {
     const issueDate = new Date();
-    const dueDate = calculateDueDate(issueDate, lease.dueDay);
+    const dueDate = calculateDueDate(issueDate, lease.dueDay ?? 1);
 
     const invoiceInput: CreateInvoiceInput = {
       organizationId,
@@ -464,7 +464,7 @@ export async function generateInvoiceForLease(
 
   // Calculate due date
   const issueDate = new Date();
-  const dueDate = calculateDueDate(issueDate, lease.dueDay);
+  const dueDate = calculateDueDate(issueDate, lease.dueDay ?? 1);
 
   // Create invoice
   const invoiceInput: CreateInvoiceInput = {

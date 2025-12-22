@@ -111,21 +111,15 @@ export default function QRScannerPage() {
 
     try {
       // First, get QR code details
-      const result = await apiGet<{
-        qrCode: QRValidationResult['qrCode'] & { qrCode: string };
-        tenant?: any;
-        unit?: any;
-        building?: any;
-      }>(`/api/visitor-qr-codes/validate?qrCode=${encodeURIComponent(qrCodeValue.trim())}`);
+      const result = await apiGet<QRValidationResult>(
+        `/api/visitor-qr-codes/validate?qrCode=${encodeURIComponent(qrCodeValue.trim())}`,
+      );
 
       setValidationResult({
-        qrCode: {
-          ...result.qrCode,
-          qrCode: result.qrCode.qrCode || qrCodeValue.trim(),
-        },
-        tenant: result.tenant,
-        unit: result.unit,
-        building: result.building,
+        qrCode: result.qrCode,
+        tenant: result.tenant ?? null,
+        unit: result.unit ?? null,
+        building: result.building ?? null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to validate QR code');
@@ -137,7 +131,7 @@ export default function QRScannerPage() {
 
   async function handleLogEntry() {
     // Extract QR code from validation result
-    const qrCodeValue = validationResult?.qrCode?.qrCode || qrCode;
+    const qrCodeValue = qrCode;
     if (!qrCodeValue) {
       setError('No QR code to log');
       return;

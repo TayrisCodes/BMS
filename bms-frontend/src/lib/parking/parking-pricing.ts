@@ -115,7 +115,9 @@ export async function createParkingPricing(
     effectiveTo:
       input.effectiveTo && typeof input.effectiveTo === 'string'
         ? new Date(input.effectiveTo)
-        : input.effectiveTo || null,
+        : input.effectiveTo instanceof Date
+          ? input.effectiveTo
+          : null,
     isActive: input.isActive ?? true,
     createdAt: now,
     updatedAt: now,
@@ -251,7 +253,7 @@ export async function updateParkingPricing(
     }
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(pricingId) },
+      { _id: new ObjectId(pricingId) } as Document,
       { $set: updateDoc },
       { returnDocument: 'after' },
     );
@@ -281,4 +283,3 @@ export async function deleteParkingPricing(
     return false;
   }
 }
-

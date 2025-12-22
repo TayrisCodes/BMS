@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
     }
 
     requirePermission(context, 'parking', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const { searchParams } = request.nextUrl;
     const buildingId = searchParams.get('buildingId');
@@ -40,8 +43,15 @@ export async function GET(request: NextRequest) {
     if (status) filters.status = status;
     if (vehicleId) filters.vehicleId = vehicleId;
     if (tenantId) filters.tenantId = tenantId;
-    if (startDate) filters.reportedAt = { $gte: new Date(startDate) };
-    if (endDate) filters.reportedAt = { ...filters.reportedAt, $lte: new Date(endDate) };
+    if (startDate) {
+      filters.reportedAt = { $gte: new Date(startDate) };
+    }
+    if (endDate) {
+      filters.reportedAt = {
+        ...(filters.reportedAt && typeof filters.reportedAt === 'object' ? filters.reportedAt : {}),
+        $lte: new Date(endDate),
+      };
+    }
 
     const violations = await listParkingViolations(context.organizationId, filters);
 
@@ -65,7 +75,10 @@ export async function POST(request: NextRequest) {
     }
 
     requirePermission(context, 'parking', 'create');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const input: CreateParkingViolationInput = await request.json();
 
@@ -81,4 +94,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
-

@@ -219,7 +219,8 @@ export default function EditAssetPage() {
   function formatDateForInput(dateString: string | null | undefined): string {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+    const datePart = date.toISOString().split('T')[0];
+    return datePart || '';
   }
 
   if (isLoading) {
@@ -668,4 +669,3 @@ export default function EditAssetPage() {
     </DashboardPage>
   );
 }
-

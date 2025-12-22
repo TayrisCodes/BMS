@@ -62,8 +62,13 @@ export async function getDurationStatistics(
     status: 'completed',
   };
   if (buildingId) filters.buildingId = buildingId;
-  if (startDate) filters.endDate = { $gte: startDate };
-  if (endDate) filters.endDate = { ...filters.endDate, $lte: endDate };
+  if (startDate && endDate) {
+    filters.endDate = { $gte: startDate, $lte: endDate };
+  } else if (startDate) {
+    filters.endDate = { $gte: startDate };
+  } else if (endDate) {
+    filters.endDate = { $lte: endDate };
+  }
 
   const assignments = await listParkingAssignments({
     organizationId,
@@ -90,7 +95,7 @@ export async function getDurationStatistics(
   const average =
     durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
   const median =
-    sortedDurations.length > 0 ? sortedDurations[Math.floor(sortedDurations.length / 2)] : 0;
+    sortedDurations.length > 0 ? (sortedDurations[Math.floor(sortedDurations.length / 2)] ?? 0) : 0;
 
   const bySpaceType: Record<
     ParkingSpaceType,
@@ -117,8 +122,8 @@ export async function getDurationStatistics(
     averageDurationMinutes: Math.round(average),
     medianDurationMinutes: Math.round(median),
     longestStayMinutes:
-      sortedDurations.length > 0 ? sortedDurations[sortedDurations.length - 1] : 0,
-    shortestStayMinutes: sortedDurations.length > 0 ? sortedDurations[0] : 0,
+      sortedDurations.length > 0 ? (sortedDurations[sortedDurations.length - 1] ?? 0) : 0,
+    shortestStayMinutes: sortedDurations.length > 0 ? (sortedDurations[0] ?? 0) : 0,
     totalStays: durations.length,
     bySpaceType,
   };
@@ -137,8 +142,13 @@ export async function getPeakParkingHours(
     logType: 'entry',
   };
   if (buildingId) filters.buildingId = buildingId;
-  if (startDate) filters.timestamp = { $gte: startDate };
-  if (endDate) filters.timestamp = { ...filters.timestamp, $lte: endDate };
+  if (startDate && endDate) {
+    filters.timestamp = { $gte: startDate, $lte: endDate };
+  } else if (startDate) {
+    filters.timestamp = { $gte: startDate };
+  } else if (endDate) {
+    filters.timestamp = { $lte: endDate };
+  }
 
   const logs = await listParkingLogs(organizationId, filters);
 
@@ -241,4 +251,3 @@ export async function getDurationTrends(
 
   return trends;
 }
-

@@ -27,6 +27,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import type { UtilityType } from '@/lib/utilities/utility-payments';
+import Image from 'next/image';
 
 interface Meter {
   _id: string;
@@ -64,13 +65,13 @@ export default function NewUtilityPaymentPage() {
   const [selectedUtilityType, setSelectedUtilityType] = useState<UtilityType | ''>('');
   const [selectedMeterId, setSelectedMeterId] = useState<string>('');
   const [periodStart, setPeriodStart] = useState<string>(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]!,
   );
   const [periodEnd, setPeriodEnd] = useState<string>(
-    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
+    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]!,
   );
   const [amount, setAmount] = useState<string>('');
-  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]!);
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -426,11 +427,14 @@ export default function NewUtilityPaymentPage() {
                     </Button>
                   </div>
                   {receiptFileName && !receiptFileName.toLowerCase().endsWith('.pdf') && (
-                    <div className="mt-4">
-                      <img
+                    <div className="relative mt-4 w-full aspect-auto">
+                      <Image
                         src={receiptUrl}
                         alt="Receipt preview"
+                        width={800}
+                        height={600}
                         className="max-w-full h-auto rounded-lg border"
+                        sizes="(max-width: 768px) 100vw, 800px"
                       />
                     </div>
                   )}
@@ -489,4 +493,3 @@ export default function NewUtilityPaymentPage() {
     </DashboardPage>
   );
 }
-

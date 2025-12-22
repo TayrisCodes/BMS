@@ -53,7 +53,7 @@ export default function SecurityParkingViolationsPage() {
   }, []);
 
   return (
-    <SecurityMobileLayout title="Parking Violations">
+    <SecurityMobileLayout>
       <div className="space-y-4 p-4">
         <Link href="/security/parking/report-violation">
           <Button className="w-full">
@@ -113,4 +113,3 @@ export default function SecurityParkingViolationsPage() {
     </SecurityMobileLayout>
   );
 }
-

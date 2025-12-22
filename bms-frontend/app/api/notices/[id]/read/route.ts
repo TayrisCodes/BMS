@@ -29,4 +29,3 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to mark notice as read' }, { status: 500 });
   }
 }
-

@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     }
 
     requirePermission(context, 'parking', 'create');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const body = await request.json();
     const { visitorLogId, plateNumber, make, model, color, expiresAt } = body;
@@ -68,4 +71,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
-

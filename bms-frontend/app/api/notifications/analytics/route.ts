@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
     }
 
     requirePermission(context, 'notifications', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const { searchParams } = request.nextUrl;
     const startDate = searchParams.get('startDate');
@@ -48,4 +51,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch notification analytics' }, { status: 500 });
   }
 }
-

@@ -123,7 +123,7 @@ export async function getLastMaintenanceDate(
   organizationId: string,
 ): Promise<Date | null> {
   const history = await findMaintenanceHistoryByAsset(assetId, organizationId, 1);
-  return history.length > 0 ? history[0].performedDate : null;
+  return history.length > 0 && history[0] ? history[0].performedDate : null;
 }
 
 /**
@@ -177,7 +177,7 @@ export async function calculateAssetReliability(
 
   // Get last maintenance date
   const lastMaintenanceDate =
-    history.length > 0
+    history.length > 0 && history[0]
       ? history[0].performedDate
       : asset.maintenanceSchedule?.lastMaintenanceDate || null;
   const daysSinceLastMaintenance = lastMaintenanceDate
@@ -188,7 +188,7 @@ export async function calculateAssetReliability(
 
   // Get next maintenance due
   const nextMaintenanceDue =
-    history.length > 0 && history[0].nextMaintenanceDue
+    history.length > 0 && history[0] && history[0].nextMaintenanceDue
       ? history[0].nextMaintenanceDue
       : asset.maintenanceSchedule?.nextMaintenanceDate || null;
   const daysUntilNextMaintenance = nextMaintenanceDue
@@ -262,4 +262,3 @@ export async function getAssetReliabilityScore(
 
   return Math.round(compositeScore);
 }
-

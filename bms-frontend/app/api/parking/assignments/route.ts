@@ -192,9 +192,9 @@ export async function POST(request: Request) {
       vehicleId: body.vehicleId || null,
       startDate: body.startDate,
       endDate: body.endDate || null,
-      pricingId: body.pricingId,
-      billingPeriod: body.billingPeriod,
-      rate: body.rate,
+      ...(body.pricingId !== undefined && { pricingId: body.pricingId }),
+      ...(body.billingPeriod !== undefined && { billingPeriod: body.billingPeriod }),
+      ...(body.rate !== undefined && { rate: body.rate }),
     };
 
     try {
@@ -258,4 +258,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

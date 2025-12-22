@@ -28,7 +28,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'update');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const organizationId = context.organizationId;
     if (!organizationId) {
@@ -98,4 +101,3 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
-

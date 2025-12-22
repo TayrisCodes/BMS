@@ -203,4 +203,3 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Failed to create organization admin' }, { status: 500 });
   }
 }
-

@@ -69,10 +69,10 @@ export async function PATCH(request: Request) {
 
     // Only allow updating certain fields (not code, subdomain, domain - those require SUPER_ADMIN)
     const updates: UpdateOrganizationInput = {
-      name: body.name,
-      contactInfo: body.contactInfo,
-      settings: body.settings,
-      branding: body.branding,
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.contactInfo !== undefined && { contactInfo: body.contactInfo ?? null }),
+      ...(body.settings !== undefined && { settings: body.settings ?? null }),
+      ...(body.branding !== undefined && { branding: body.branding ?? null }),
     };
 
     // Remove undefined fields

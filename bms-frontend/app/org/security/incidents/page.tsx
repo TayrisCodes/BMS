@@ -131,11 +131,7 @@ export default function IncidentsPage() {
   }
 
   return (
-    <DashboardPage
-      title="Security Incidents"
-      description="View and manage security incidents"
-      icon={<AlertTriangle className="h-5 w-5" />}
-    >
+    <DashboardPage title="Security Incidents">
       <div className="col-span-full flex justify-between items-center">
         <div className="flex gap-2">
           <Link href="/org/security/incidents/reports">
@@ -276,4 +272,3 @@ export default function IncidentsPage() {
     </DashboardPage>
   );
 }
-

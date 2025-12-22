@@ -25,9 +25,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
 
     const violation = await findParkingViolationById(params.id, context.organizationId);
+    if (!violation) {
+      return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, violation.organizationId);
 
     if (!violation) {
       return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
@@ -53,7 +59,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'update');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+
+    const violation = await findParkingViolationById(params.id, context.organizationId);
+    if (!violation) {
+      return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, violation.organizationId);
 
     const updates = await request.json();
 
@@ -92,7 +106,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'delete');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+
+    const violation = await findParkingViolationById(params.id, context.organizationId);
+    if (!violation) {
+      return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, violation.organizationId);
 
     const deleted = await deleteParkingViolation(params.id, context.organizationId);
 
@@ -106,4 +128,3 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to delete parking violation' }, { status: 500 });
   }
 }
-

@@ -6,8 +6,8 @@ import {
   updateInvoiceTemplate,
   deleteInvoiceTemplate,
   type UpdateInvoiceTemplateInput,
-  type InvoiceItem,
 } from '@/lib/invoices/templates';
+import { type InvoiceItem } from '@/lib/invoices/invoices';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -101,14 +101,14 @@ export async function PUT(request: Request, routeParams: RouteParams) {
     };
 
     const input: UpdateInvoiceTemplateInput = {
-      name: body.name,
-      description: body.description,
-      defaultItems: body.defaultItems,
-      defaultVATRate: body.defaultVATRate,
-      headerText: body.headerText,
-      footerText: body.footerText,
-      customFields: body.customFields,
-      isDefault: body.isDefault,
+      ...(body.name !== undefined && { name: body.name }),
+      ...(body.description !== undefined && { description: body.description ?? null }),
+      ...(body.defaultItems !== undefined && { defaultItems: body.defaultItems }),
+      ...(body.defaultVATRate !== undefined && { defaultVATRate: body.defaultVATRate ?? null }),
+      ...(body.headerText !== undefined && { headerText: body.headerText ?? null }),
+      ...(body.footerText !== undefined && { footerText: body.footerText ?? null }),
+      ...(body.customFields !== undefined && { customFields: body.customFields ?? null }),
+      ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
     };
 
     try {
@@ -211,4 +211,3 @@ export async function DELETE(request: Request, routeParams: RouteParams) {
     );
   }
 }
-

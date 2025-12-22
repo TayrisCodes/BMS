@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       description: body.description,
       location: body.location || null,
       reportedBy: context.userId,
-      reportedAt: body.reportedAt ? new Date(body.reportedAt) : undefined,
+      reportedAt: body.reportedAt ? new Date(body.reportedAt) : new Date(),
       involvedParties: body.involvedParties || null,
       status: body.status,
       linkedVisitorLogId: body.linkedVisitorLogId || null,
@@ -169,4 +169,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create incident' }, { status: 500 });
   }
 }
-

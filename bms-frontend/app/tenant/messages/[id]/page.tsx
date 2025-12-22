@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/lib/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
@@ -22,33 +22,7 @@ export default function ConversationPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>('');
 
-  useEffect(() => {
-    loadConversation();
-    // Set up polling to refresh messages
-    const interval = setInterval(() => {
-      loadMessages();
-    }, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [conversationId]);
-
-  useEffect(() => {
-    // Get current user ID for message display
-    async function getCurrentUser() {
-      try {
-        const response = await fetch('/api/me');
-        if (response.ok) {
-          const data = await response.json();
-          setCurrentUserId(data.auth?.userId || data.user?._id || '');
-        }
-      } catch (error) {
-        console.error('Failed to get current user:', error);
-      }
-    }
-    getCurrentUser();
-  }, []);
-
-  const loadConversation = async () => {
+  const loadConversation = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet<{ conversation: Conversation; messages: Message[] }>(
@@ -66,9 +40,9 @@ export default function ConversationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [conversationId, toast, router]);
 
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       const data = await apiGet<{ messages: Message[] }>(
         `/api/conversations/${conversationId}/messages`,
@@ -77,7 +51,33 @@ export default function ConversationPage() {
     } catch (error) {
       console.error('Failed to refresh messages:', error);
     }
-  };
+  }, [conversationId]);
+
+  useEffect(() => {
+    loadConversation();
+    // Set up polling to refresh messages
+    const interval = setInterval(() => {
+      loadMessages();
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [conversationId, loadConversation, loadMessages]);
+
+  useEffect(() => {
+    // Get current user ID for message display
+    async function getCurrentUser() {
+      try {
+        const response = await fetch('/api/me');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUserId(data.auth?.userId || data.user?._id || '');
+        }
+      } catch (error) {
+        console.error('Failed to get current user:', error);
+      }
+    }
+    getCurrentUser();
+  }, []);
 
   const handleMessageSent = () => {
     loadMessages();

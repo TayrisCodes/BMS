@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     // Require permission to read reports
-    requirePermission(context, 'reports', 'read');
+    requirePermission(context, 'reporting', 'read');
 
     const organizationId = context.organizationId;
     if (!organizationId) {
@@ -72,4 +72,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

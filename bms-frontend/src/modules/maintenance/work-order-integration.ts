@@ -108,6 +108,7 @@ export async function handleWorkOrderCompletion(
     // Mark the first matching task as completed
     if (tasks.length > 0) {
       const task = tasks[0];
+      if (!task) return;
       await updateMaintenanceTask(
         task._id,
         {
@@ -188,4 +189,3 @@ export async function completeWorkOrderWithIntegration(
 
   return completed;
 }
-

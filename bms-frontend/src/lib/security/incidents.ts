@@ -505,4 +505,3 @@ export async function deleteIncident(
     return false;
   }
 }
-

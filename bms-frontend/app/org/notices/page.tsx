@@ -73,13 +73,7 @@ export default function NoticesPage() {
   };
 
   return (
-    <DashboardPage
-      header={{
-        title: 'Notice Board',
-        description: 'Manage building announcements and notices',
-        icon: Bell,
-      }}
-    >
+    <DashboardPage title="Notice Board">
       <div className="flex justify-between items-center mb-6">
         <Link href="/org/notices/new">
           <Button>
@@ -159,4 +153,3 @@ export default function NoticesPage() {
     </DashboardPage>
   );
 }
-

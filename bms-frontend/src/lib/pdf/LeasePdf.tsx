@@ -115,7 +115,7 @@ export function LeasePdf({
               {penalty?.lateFeeRatePerDay
                 ? `${(penalty.lateFeeRatePerDay * 100).toFixed(2)}% per day`
                 : '—'}
-              {penalty?.lateFeeGraceDays ? ` after ${penalty.lateFeeGraceDays} days` : ''}
+              {penalty?.gracePeriodDays ? ` after ${penalty.gracePeriodDays} days` : ''}
               {penalty?.lateFeeCapDays ? ` (cap ${penalty.lateFeeCapDays} days)` : ''}
             </Text>
           </View>
@@ -145,4 +145,3 @@ export function LeasePdf({
     </Document>
   );
 }
-

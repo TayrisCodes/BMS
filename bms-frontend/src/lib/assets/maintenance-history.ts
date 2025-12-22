@@ -103,10 +103,12 @@ export async function createMaintenanceHistory(
   // Convert dates
   const performedDate =
     typeof input.performedDate === 'string' ? new Date(input.performedDate) : input.performedDate;
-  const nextMaintenanceDue =
+  const nextMaintenanceDue: Date | null =
     input.nextMaintenanceDue && typeof input.nextMaintenanceDue === 'string'
       ? new Date(input.nextMaintenanceDue)
-      : input.nextMaintenanceDue || null;
+      : input.nextMaintenanceDue instanceof Date
+        ? input.nextMaintenanceDue
+        : null;
 
   // Validate required fields
   if (!input.description || !input.description.trim()) {

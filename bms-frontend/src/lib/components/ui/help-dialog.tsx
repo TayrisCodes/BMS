@@ -37,4 +37,3 @@ export function HelpDialog({ open, onOpenChange, title, content, helpLink }: Hel
     </Dialog>
   );
 }
-

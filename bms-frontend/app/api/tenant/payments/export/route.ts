@@ -68,16 +68,17 @@ export async function GET(request: NextRequest) {
     }
     if (Object.keys(dateFilter).length > 0) {
       query.$or = query.$or || [];
-      query.$and = [
+      const andConditions: Record<string, unknown>[] = [
         {
           $or: [{ paymentDate: dateFilter }, { createdAt: dateFilter }],
         },
       ];
       if (method) {
-        query.$and.push({
+        andConditions.push({
           $or: [{ paymentMethod: method }, { method: method }],
         });
       }
+      query.$and = andConditions;
     }
 
     const payments = await db
@@ -168,4 +169,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to export payments' }, { status: 500 });
   }
 }
-

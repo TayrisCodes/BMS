@@ -95,10 +95,10 @@ export function calculateRent(input: RentCalculationInput): RentCalculationResul
   // Building policy formula
   const effectiveFloor = floor ?? 0;
   const isGround = effectiveFloor === 0 || effectiveFloor === 1;
-  const floorAdjustment = Math.max(0, effectiveFloor - 1) * decrementPerFloor * -1;
-  const groundMultiplier = isGround ? groundFloorMultiplier : 1;
+  const floorAdjustment = Math.max(0, effectiveFloor - 1) * (decrementPerFloor ?? 0) * -1;
+  const groundMultiplier = isGround ? (groundFloorMultiplier ?? 1) : 1;
   const computedRate = Math.max(
-    minRatePerSqm,
+    minRatePerSqm ?? 0,
     (baseRatePerSqm + floorAdjustment) * groundMultiplier,
   );
 
@@ -137,14 +137,19 @@ export function resolveRentFromPolicy(opts: {
 
   return calculateRent({
     baseRatePerSqm: policy.baseRatePerSqm,
-    decrementPerFloor: policy.decrementPerFloor ?? undefined,
-    groundFloorMultiplier: policy.groundFloorMultiplier ?? undefined,
-    minRatePerSqm: policy.minRatePerSqm ?? undefined,
+    ...(policy.decrementPerFloor !== undefined
+      ? { decrementPerFloor: policy.decrementPerFloor }
+      : {}),
+    ...(policy.groundFloorMultiplier !== undefined
+      ? { groundFloorMultiplier: policy.groundFloorMultiplier }
+      : {}),
+    ...(policy.minRatePerSqm !== undefined ? { minRatePerSqm: policy.minRatePerSqm } : {}),
     floor: unit.floor ?? null,
     area: unit.area ?? null,
-    floorOverrideRate,
-    ratePerSqmOverride: unit.ratePerSqmOverride ?? undefined,
-    flatRentOverride: unit.flatRentOverride ?? undefined,
+    ...(floorOverrideRate !== undefined ? { floorOverrideRate } : {}),
+    ...(unit.ratePerSqmOverride !== undefined
+      ? { ratePerSqmOverride: unit.ratePerSqmOverride }
+      : {}),
+    ...(unit.flatRentOverride !== undefined ? { flatRentOverride: unit.flatRentOverride } : {}),
   });
 }
-

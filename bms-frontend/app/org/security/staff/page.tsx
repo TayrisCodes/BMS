@@ -101,11 +101,7 @@ export default function SecurityStaffPage() {
   }
 
   return (
-    <DashboardPage
-      title="Security Staff"
-      description="Manage security staff and guards"
-      icon={<Shield className="h-5 w-5" />}
-    >
+    <DashboardPage title="Security Staff">
       <div className="col-span-full flex justify-between items-center">
         <div className="flex gap-2">
           <Link href="/org/security/staff/new">
@@ -212,4 +208,3 @@ export default function SecurityStaffPage() {
     </DashboardPage>
   );
 }
-

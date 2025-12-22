@@ -60,4 +60,3 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Failed to check out from shift' }, { status: 500 });
   }
 }
-

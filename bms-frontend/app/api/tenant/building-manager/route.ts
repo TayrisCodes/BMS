@@ -89,11 +89,11 @@ export async function GET() {
       });
     }
 
-    // Fallback to building contact info
+    // Fallback - no building manager found
     return NextResponse.json({
-      name: building.managerName || null,
-      email: building.contactEmail || null,
-      phone: building.contactPhone || null,
+      name: null,
+      email: null,
+      phone: null,
     });
   } catch (error) {
     console.error('Building manager fetch error:', error);
@@ -103,4 +103,3 @@ export async function GET() {
     );
   }
 }
-

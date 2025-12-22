@@ -39,7 +39,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     // Separate invoices by status
     const unpaidInvoices = allInvoices.filter(
-      (inv) => inv.status === 'pending' || inv.status === 'overdue' || inv.status === 'sent',
+      (inv) => inv.status === 'draft' || inv.status === 'overdue' || inv.status === 'sent',
     );
     const overdueInvoices = allInvoices.filter((inv) => {
       if (inv.status === 'paid') return false;

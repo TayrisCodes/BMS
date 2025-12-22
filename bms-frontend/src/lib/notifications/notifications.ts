@@ -15,6 +15,8 @@ export type NotificationType =
   | 'message_received'
   | 'conversation_archived'
   | 'conversation_closed'
+  | 'shift_assignment'
+  | 'shift_reminder'
   | 'system'
   | 'other';
 

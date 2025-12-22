@@ -72,4 +72,3 @@ export function BotCommandHandler({
 
   return { executeCommand, processing };
 }
-

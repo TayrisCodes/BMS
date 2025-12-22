@@ -138,7 +138,7 @@ export async function generateMonthlyInvoices(
 
       allResults.push({
         organizationId: org._id,
-        organizationName: org.name,
+        ...(org.name ? { organizationName: org.name } : {}),
         periodStart: calculatedPeriodStart,
         periodEnd: calculatedPeriodEnd,
         results,
@@ -162,7 +162,7 @@ export async function generateMonthlyInvoices(
       // Continue with other organizations even if one fails
       allResults.push({
         organizationId: org._id,
-        organizationName: org.name,
+        ...(org.name ? { organizationName: org.name } : {}),
         periodStart: calculatedPeriodStart,
         periodEnd: calculatedPeriodEnd,
         results: [],

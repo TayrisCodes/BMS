@@ -61,9 +61,7 @@ export async function POST(request: Request) {
     ? {
         ...building.rentPolicy,
         ...policy,
-        effectiveDate: policy.effectiveDate
-          ? new Date(policy.effectiveDate)
-          : (policy.effectiveDate ?? null),
+        effectiveDate: policy.effectiveDate ? new Date(policy.effectiveDate) : null,
       }
     : building.rentPolicy;
 
@@ -85,7 +83,7 @@ export async function POST(request: Request) {
 
   // Update building policy if provided
   if (policy && apply) {
-    await updateBuilding(buildingId, { rentPolicy: updatedPolicy });
+    await updateBuilding(buildingId, { rentPolicy: updatedPolicy ?? null });
   }
 
   // Preview/apply lease recalculations
@@ -119,7 +117,7 @@ export async function POST(request: Request) {
         unitId: unit._id,
         oldRent: lease.rentAmount ?? lease.terms?.rent ?? lease.calculatedRent ?? null,
         newRent,
-        rateSource: policyResult?.rateSource,
+        ...(policyResult?.rateSource && { rateSource: policyResult.rateSource }),
       });
 
       if (apply && policyResult) {
@@ -130,7 +128,10 @@ export async function POST(request: Request) {
             ...(lease.terms ?? { rent: 0 }),
             rent: policyResult.total,
           },
-          rateSource: policyResult.rateSource,
+          rateSource:
+            policyResult.rateSource === 'floor_override'
+              ? 'building_policy'
+              : (policyResult.rateSource as 'building_policy' | 'unit_override' | 'manual'),
           rentBreakdown: {
             ...policyResult.breakdown,
             effectiveFrom: effectiveDate,

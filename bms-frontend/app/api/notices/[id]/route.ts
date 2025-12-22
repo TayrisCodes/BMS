@@ -21,9 +21,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
 
     const notice = await findNoticeById(params.id, context.organizationId);
+    if (!notice) {
+      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, notice.organizationId);
 
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
@@ -49,9 +55,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'update');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
 
     const updates = await request.json();
+
+    const notice = await findNoticeById(params.id, context.organizationId);
+    if (!notice) {
+      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, notice.organizationId);
 
     const updatedNotice = await updateNotice(params.id, context.organizationId, updates);
 
@@ -79,7 +93,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'delete');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+
+    const notice = await findNoticeById(params.id, context.organizationId);
+    if (!notice) {
+      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, notice.organizationId);
 
     const deleted = await deleteNotice(params.id, context.organizationId);
 
@@ -93,4 +115,3 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to delete notice' }, { status: 500 });
   }
 }
-

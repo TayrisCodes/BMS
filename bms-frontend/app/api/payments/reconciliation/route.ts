@@ -144,7 +144,7 @@ export async function POST(request: Request) {
           reconciliationStatus: 'reconciled',
           notes: body.reconciliationNotes
             ? `[Bulk Reconciliation] ${body.reconciliationNotes}`
-            : existingPayment.notes,
+            : (existingPayment.notes ?? null),
           providerResponse: updatedProviderResponse,
         });
 

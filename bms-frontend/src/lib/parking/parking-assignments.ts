@@ -196,7 +196,9 @@ export async function createParkingAssignment(
 
     const activePricing = await findActivePricing(
       buildingId,
-      parkingSpace.spaceType,
+      parkingSpace.spaceType === 'reserved'
+        ? 'tenant'
+        : (parkingSpace.spaceType as 'tenant' | 'visitor'),
       input.organizationId,
       typeof input.startDate === 'string' ? new Date(input.startDate) : input.startDate,
     );
@@ -223,9 +225,7 @@ export async function createParkingAssignment(
   }
 
   const actualStartTime =
-    input.actualStartTime && typeof input.actualStartTime === 'string'
-      ? new Date(input.actualStartTime)
-      : input.actualStartTime || now;
+    typeof input.startDate === 'string' ? new Date(input.startDate) : input.startDate;
 
   const doc: Omit<ParkingAssignment, '_id'> = {
     organizationId: input.organizationId,
@@ -239,7 +239,9 @@ export async function createParkingAssignment(
     endDate:
       input.endDate && typeof input.endDate === 'string'
         ? new Date(input.endDate)
-        : input.endDate || null,
+        : input.endDate instanceof Date
+          ? input.endDate
+          : null,
     actualStartTime: actualStartTime,
     actualEndTime: null,
     calculatedDuration: null,
@@ -307,6 +309,7 @@ export interface ListParkingAssignmentsFilters {
   tenantId?: string;
   visitorLogId?: string;
   parkingSpaceId?: string;
+  vehicleId?: string;
   status?: AssignmentStatus;
   assignmentType?: AssignmentType;
 }
@@ -336,6 +339,10 @@ export async function listParkingAssignments(
 
   if (filters.parkingSpaceId) {
     query.parkingSpaceId = filters.parkingSpaceId;
+  }
+
+  if (filters.vehicleId) {
+    query.vehicleId = filters.vehicleId;
   }
 
   if (filters.status) {
@@ -399,7 +406,7 @@ export async function updateParkingAssignment(
     delete updateDoc.createdAt;
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(assignmentId) },
+      { _id: new ObjectId(assignmentId) } as Document,
       { $set: updateDoc },
       { returnDocument: 'after' },
     );

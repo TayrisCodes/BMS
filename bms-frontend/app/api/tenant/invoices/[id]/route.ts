@@ -88,4 +88,3 @@ export async function GET(request: NextRequest, routeParams: RouteParams) {
     return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 });
   }
 }
-

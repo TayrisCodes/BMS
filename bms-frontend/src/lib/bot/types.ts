@@ -22,4 +22,3 @@ export interface BotResponse {
   link?: string;
   metadata?: Record<string, unknown>;
 }
-

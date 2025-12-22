@@ -32,7 +32,7 @@ export default function NewParkingPricingPage() {
   const [dailyRate, setDailyRate] = useState<string>('');
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const [effectiveFrom, setEffectiveFrom] = useState<string>(
-    new Date().toISOString().split('T')[0],
+    new Date().toISOString().split('T')[0] || '',
   );
   const [effectiveTo, setEffectiveTo] = useState<string>('');
   const [isActive, setIsActive] = useState<boolean>(true);
@@ -388,4 +388,3 @@ export default function NewParkingPricingPage() {
     </DashboardPage>
   );
 }
-

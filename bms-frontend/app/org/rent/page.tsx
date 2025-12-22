@@ -66,8 +66,11 @@ export default function RentManagementPage() {
       .then((res) => {
         setBuildings(res.buildings || []);
         if (res.buildings?.length) {
-          setSelectedBuildingId(res.buildings[0]._id);
-          setPolicy(res.buildings[0].rentPolicy || policy);
+          const firstBuilding = res.buildings[0];
+          if (firstBuilding) {
+            setSelectedBuildingId(firstBuilding._id);
+            setPolicy((prevPolicy) => firstBuilding.rentPolicy || prevPolicy);
+          }
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load buildings'));
@@ -186,8 +189,8 @@ export default function RentManagementPage() {
                   value={policy?.baseRatePerSqm ?? 0}
                   onChange={(e) =>
                     setPolicy((prev) => ({
-                      ...(prev || {}),
                       baseRatePerSqm: parseFloat(e.target.value || '0'),
+                      ...prev,
                     }))
                   }
                 />
@@ -200,7 +203,8 @@ export default function RentManagementPage() {
                   value={policy?.decrementPerFloor ?? 0}
                   onChange={(e) =>
                     setPolicy((prev) => ({
-                      ...(prev || {}),
+                      baseRatePerSqm: prev?.baseRatePerSqm ?? 0,
+                      ...prev,
                       decrementPerFloor: parseFloat(e.target.value || '0'),
                     }))
                   }
@@ -214,7 +218,8 @@ export default function RentManagementPage() {
                   value={policy?.groundFloorMultiplier ?? 1}
                   onChange={(e) =>
                     setPolicy((prev) => ({
-                      ...(prev || {}),
+                      baseRatePerSqm: prev?.baseRatePerSqm ?? 0,
+                      ...prev,
                       groundFloorMultiplier: parseFloat(e.target.value || '1'),
                     }))
                   }
@@ -228,7 +233,8 @@ export default function RentManagementPage() {
                   value={policy?.minRatePerSqm ?? 0}
                   onChange={(e) =>
                     setPolicy((prev) => ({
-                      ...(prev || {}),
+                      baseRatePerSqm: prev?.baseRatePerSqm ?? 0,
+                      ...prev,
                       minRatePerSqm: parseFloat(e.target.value || '0'),
                     }))
                   }
@@ -240,12 +246,13 @@ export default function RentManagementPage() {
                   type="date"
                   value={
                     policy?.effectiveDate
-                      ? new Date(policy.effectiveDate).toISOString().split('T')[0]
+                      ? new Date(policy.effectiveDate).toISOString().split('T')[0]!
                       : ''
                   }
                   onChange={(e) =>
                     setPolicy((prev) => ({
-                      ...(prev || {}),
+                      baseRatePerSqm: prev?.baseRatePerSqm ?? 0,
+                      ...prev,
                       effectiveDate: e.target.value ? new Date(e.target.value).toISOString() : null,
                     }))
                   }

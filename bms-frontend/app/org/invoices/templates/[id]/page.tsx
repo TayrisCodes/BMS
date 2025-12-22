@@ -78,7 +78,7 @@ export default function EditTemplatePage() {
 
   function updateItem(index: number, field: keyof InvoiceItem, value: string | number) {
     const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: value } as InvoiceItem;
     setItems(updated);
   }
 
@@ -314,4 +314,3 @@ export default function EditTemplatePage() {
     </DashboardPage>
   );
 }
-

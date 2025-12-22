@@ -39,7 +39,7 @@ export default function ParkingDashboardPage() {
       try {
         const data = await apiGet<{ buildings: Building[] }>('/api/buildings');
         setBuildings(data.buildings || []);
-        if (data.buildings && data.buildings.length > 0) {
+        if (data.buildings && data.buildings.length > 0 && data.buildings[0]) {
           setSelectedBuilding(data.buildings[0]._id);
         }
       } catch (err) {
@@ -76,13 +76,7 @@ export default function ParkingDashboardPage() {
   }, [selectedBuilding]);
 
   return (
-    <DashboardPage
-      header={{
-        title: 'Parking Dashboard',
-        description: 'Real-time parking overview and statistics',
-        icon: ParkingMeter,
-      }}
-    >
+    <DashboardPage title="Parking Dashboard">
       <div className="col-span-full space-y-6">
         {error && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{error}</div>}
 
@@ -231,4 +225,3 @@ export default function ParkingDashboardPage() {
     </DashboardPage>
   );
 }
-

@@ -84,24 +84,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
 
     const updates: Partial<CreateAccessPermissionInput> = {
-      buildingId: body.buildingId !== undefined ? body.buildingId : undefined,
-      entityType: body.entityType !== undefined ? body.entityType : undefined,
-      entityId: body.entityId !== undefined ? body.entityId : undefined,
-      accessLevel: body.accessLevel !== undefined ? body.accessLevel : undefined,
-      restrictions: body.restrictions !== undefined ? body.restrictions : undefined,
-      validFrom:
-        body.validFrom !== undefined
-          ? body.validFrom
-            ? new Date(body.validFrom)
-            : null
-          : undefined,
-      validUntil:
-        body.validUntil !== undefined
-          ? body.validUntil
-            ? new Date(body.validUntil)
-            : null
-          : undefined,
-      notes: body.notes !== undefined ? body.notes : undefined,
+      ...(body.buildingId !== undefined && { buildingId: body.buildingId }),
+      ...(body.entityType !== undefined && { entityType: body.entityType }),
+      ...(body.entityId !== undefined && { entityId: body.entityId }),
+      ...(body.accessLevel !== undefined && { accessLevel: body.accessLevel }),
+      ...(body.restrictions !== undefined && { restrictions: body.restrictions }),
+      ...(body.validFrom !== undefined && {
+        validFrom: body.validFrom ? new Date(body.validFrom) : null,
+      }),
+      ...(body.validUntil !== undefined && {
+        validUntil: body.validUntil ? new Date(body.validUntil) : null,
+      }),
+      ...(body.notes !== undefined && { notes: body.notes }),
     };
 
     // Remove undefined values
@@ -178,4 +172,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete access permission' }, { status: 500 });
   }
 }
-

@@ -329,7 +329,7 @@ export async function updateParkingViolation(
     }
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(violationId), organizationId },
+      { _id: new ObjectId(violationId), organizationId } as Document,
       { $set: updateDoc },
       { returnDocument: 'after' },
     );
@@ -362,10 +362,12 @@ export async function deleteParkingViolation(
   const { ObjectId } = await import('mongodb');
 
   try {
-    const result = await collection.deleteOne({ _id: new ObjectId(violationId), organizationId });
+    const result = await collection.deleteOne({
+      _id: new ObjectId(violationId),
+      organizationId,
+    } as Document);
     return result.deletedCount === 1;
   } catch {
     return false;
   }
 }
-

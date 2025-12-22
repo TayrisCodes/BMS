@@ -210,7 +210,9 @@ export function BulkOperationsDialog({
                           value={user.name}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            newUsers[index].name = e.target.value;
+                            if (newUsers[index]) {
+                              newUsers[index].name = e.target.value;
+                            }
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                         />
@@ -220,7 +222,9 @@ export function BulkOperationsDialog({
                           value={user.email}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            newUsers[index].email = e.target.value;
+                            if (newUsers[index]) {
+                              newUsers[index].email = e.target.value;
+                            }
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                         />
@@ -229,7 +233,9 @@ export function BulkOperationsDialog({
                           value={user.phone}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            newUsers[index].phone = e.target.value;
+                            if (newUsers[index]) {
+                              newUsers[index].phone = e.target.value;
+                            }
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                           required
@@ -311,7 +317,7 @@ export function BulkOperationsDialog({
                     onValueChange={(value) =>
                       setUpdateData({
                         ...updateData,
-                        status: value === 'none' ? undefined : (value as UserStatus),
+                        ...(value !== 'none' ? { status: value as UserStatus } : {}),
                       })
                     }
                   >
@@ -400,4 +406,3 @@ export function BulkOperationsDialog({
     </Dialog>
   );
 }
-

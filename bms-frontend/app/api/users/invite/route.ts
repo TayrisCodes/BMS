@@ -114,16 +114,21 @@ export async function POST(request: NextRequest) {
       };
     } else {
       // Create invitation (send email)
-      result = await createInvitation({
+      const invitationInput: Parameters<typeof createInvitation>[0] = {
         organizationId,
         email: body.email || null,
         phone: body.phone,
         roles: body.roles,
         invitedBy: context.userId,
         name: body.name || null,
-        emailFrom: body.emailFrom,
-        emailFromName: body.emailFromName,
-      });
+      };
+      if (body.emailFrom !== undefined) {
+        invitationInput.emailFrom = body.emailFrom;
+      }
+      if (body.emailFromName !== undefined) {
+        invitationInput.emailFromName = body.emailFromName;
+      }
+      result = await createInvitation(invitationInput);
     }
 
     // Log user creation/invitation

@@ -39,4 +39,3 @@ export async function POST(request: Request, routeParams: RouteParams) {
 
   return NextResponse.json({ message: 'Terms accepted' });
 }
-

@@ -25,6 +25,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { UtilityType } from '@/lib/utilities/utility-payments';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -356,8 +357,15 @@ export default function UtilityPaymentDetailPage() {
             </CardHeader>
             <CardContent>
               {isReceiptImage ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <img src={payment.receiptUrl} alt="Payment receipt" className="w-full h-auto" />
+                <div className="relative w-full aspect-auto border rounded-lg overflow-hidden">
+                  <Image
+                    src={payment.receiptUrl}
+                    alt="Payment receipt"
+                    width={800}
+                    height={600}
+                    className="w-full h-auto"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                  />
                 </div>
               ) : (
                 <div className="border rounded-lg p-8 text-center">
@@ -439,4 +447,3 @@ export default function UtilityPaymentDetailPage() {
     </DashboardPage>
   );
 }
-

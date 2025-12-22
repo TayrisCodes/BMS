@@ -55,7 +55,7 @@ export default function AdHocInvoicePage() {
   const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string>('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>('');
   const [dueDate, setDueDate] = useState<string>(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
   );
   const [vatRate, setVatRate] = useState<string>('15');
   const [currency, setCurrency] = useState<string>('ETB');
@@ -82,7 +82,9 @@ export default function AdHocInvoicePage() {
         if (currenciesData.currencies && currenciesData.currencies.length > 0) {
           const primaryCurrency =
             currenciesData.currencies.find((c: any) => c.isPrimary) || currenciesData.currencies[0];
-          setCurrency(primaryCurrency.code);
+          if (primaryCurrency?.code) {
+            setCurrency(primaryCurrency.code);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load form data');
@@ -142,7 +144,7 @@ export default function AdHocInvoicePage() {
 
   function updateItem(index: number, field: keyof InvoiceItem, value: string | number) {
     const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: value } as InvoiceItem;
     setItems(updated);
   }
 
@@ -456,4 +458,3 @@ export default function AdHocInvoicePage() {
     </DashboardPage>
   );
 }
-

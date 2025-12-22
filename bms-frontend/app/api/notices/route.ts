@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
     }
 
     requirePermission(context, 'notices', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const { searchParams } = request.nextUrl;
     const buildingId = searchParams.get('buildingId');
@@ -52,7 +55,10 @@ export async function POST(request: NextRequest) {
     }
 
     requirePermission(context, 'notices', 'create');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const input: CreateNoticeInput = await request.json();
 
@@ -92,4 +98,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
-

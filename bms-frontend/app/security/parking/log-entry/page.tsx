@@ -116,7 +116,7 @@ export default function LogEntryPage() {
   }
 
   return (
-    <SecurityMobileLayout title={logType === 'entry' ? 'Log Entry' : 'Log Exit'}>
+    <SecurityMobileLayout>
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-4">
           <Link href="/security/parking">
@@ -236,4 +236,3 @@ export default function LogEntryPage() {
     </SecurityMobileLayout>
   );
 }
-

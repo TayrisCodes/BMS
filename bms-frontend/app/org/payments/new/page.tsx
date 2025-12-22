@@ -46,7 +46,7 @@ export default function NewPaymentPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>(invoiceIdParam || '__none__');
   const [amount, setAmount] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('');
-  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]!);
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -74,10 +74,12 @@ export default function NewPaymentPage() {
         // If invoice is pre-selected, set amount and tenant
         if (invoiceIdParam && data.invoices && data.invoices.length > 0) {
           const invoice = data.invoices[0];
-          setSelectedInvoiceId(invoice._id);
-          setSelectedTenantId(invoice.tenantId);
-          // Calculate remaining balance (we'll need to fetch payments for this)
-          setAmount(invoice.total.toString());
+          if (invoice) {
+            setSelectedInvoiceId(invoice._id);
+            setSelectedTenantId(invoice.tenantId);
+            // Calculate remaining balance (we'll need to fetch payments for this)
+            setAmount(invoice.total.toString());
+          }
         } else if (!invoiceIdParam) {
           // If no invoice is pre-selected, default to "none"
           setSelectedInvoiceId('__none__');
@@ -99,8 +101,11 @@ export default function NewPaymentPage() {
       const tenantInvoices = invoices.filter((inv) => inv.tenantId === selectedTenantId);
       if (tenantInvoices.length > 0 && (selectedInvoiceId === '__none__' || !selectedInvoiceId)) {
         // Auto-select first invoice if available and no invoice is selected
-        setSelectedInvoiceId(tenantInvoices[0]._id);
-        setAmount(tenantInvoices[0].total.toString());
+        const firstInvoice = tenantInvoices[0];
+        if (firstInvoice) {
+          setSelectedInvoiceId(firstInvoice._id);
+          setAmount(firstInvoice.total.toString());
+        }
       }
     }
   }, [selectedTenantId, invoices, selectedInvoiceId]);

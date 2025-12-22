@@ -185,8 +185,8 @@ export async function createComplaint(input: CreateComplaintInput): Promise<Comp
     resolutionNotes: null,
     // Maintenance request fields
     type: input.type ?? 'complaint',
-    maintenanceCategory: input.maintenanceCategory ?? undefined,
-    urgency: input.urgency ?? undefined,
+    ...(input.maintenanceCategory ? { maintenanceCategory: input.maintenanceCategory } : {}),
+    ...(input.urgency ? { urgency: input.urgency } : {}),
     preferredTimeWindow: input.preferredTimeWindow ?? null,
     linkedWorkOrderId: null,
     createdAt: now,

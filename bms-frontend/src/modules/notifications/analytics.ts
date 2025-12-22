@@ -58,11 +58,12 @@ export async function getNotificationStatistics(
     organizationId,
   };
 
-  if (startDate) {
+  if (startDate && endDate) {
+    filters.createdAt = { $gte: startDate, $lte: endDate };
+  } else if (startDate) {
     filters.createdAt = { $gte: startDate };
-  }
-  if (endDate) {
-    filters.createdAt = { ...filters.createdAt, $lte: endDate };
+  } else if (endDate) {
+    filters.createdAt = { $lte: endDate };
   }
 
   const notifications = await collection.find(filters as any).toArray();
@@ -104,7 +105,7 @@ export async function getNotificationStatistics(
             if ('delivered' in deliveryStatus && deliveryStatus.delivered) {
               channelStats.delivered++;
               totalDelivered++;
-            } else if (deliveryStatus.error) {
+            } else if ('error' in deliveryStatus && deliveryStatus.error) {
               channelStats.failed++;
             }
 
@@ -197,4 +198,3 @@ export async function getNotificationTrends(
 
   return trends;
 }
-

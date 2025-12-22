@@ -238,6 +238,7 @@ export interface UpdateOrganizationInput {
   domain?: string | null;
   subdomain?: string | null;
   branding?: Organization['branding'];
+  paymentReminderSettings?: Organization['paymentReminderSettings'];
 }
 
 export async function updateOrganization(
@@ -277,6 +278,9 @@ export async function updateOrganization(
   }
   if (input.branding !== undefined) {
     updates.branding = input.branding;
+  }
+  if (input.paymentReminderSettings !== undefined) {
+    updates.paymentReminderSettings = input.paymentReminderSettings;
   }
 
   const result = await collection.updateOne(

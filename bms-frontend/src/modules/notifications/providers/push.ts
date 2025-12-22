@@ -122,7 +122,8 @@ export class PushNotificationProvider {
     const sub = subscription as Record<string, unknown>;
     return (
       typeof sub.endpoint === 'string' &&
-      sub.keys &&
+      sub.keys !== null &&
+      sub.keys !== undefined &&
       typeof sub.keys === 'object' &&
       typeof (sub.keys as Record<string, unknown>).p256dh === 'string' &&
       typeof (sub.keys as Record<string, unknown>).auth === 'string'

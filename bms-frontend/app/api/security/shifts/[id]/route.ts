@@ -86,22 +86,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const updates: Partial<
       CreateShiftInput & { status?: string; checkInTime?: Date | null; checkOutTime?: Date | null }
-    > = {
-      buildingId: body.buildingId !== undefined ? body.buildingId : undefined,
-      securityStaffId: body.securityStaffId !== undefined ? body.securityStaffId : undefined,
-      shiftType: body.shiftType !== undefined ? body.shiftType : undefined,
-      startTime: body.startTime !== undefined ? new Date(body.startTime) : undefined,
-      endTime: body.endTime !== undefined ? new Date(body.endTime) : undefined,
-      status: body.status !== undefined ? body.status : undefined,
-      notes: body.notes !== undefined ? body.notes : undefined,
-    };
+    > = {};
 
-    // Remove undefined values
-    Object.keys(updates).forEach((key) => {
-      if (updates[key as keyof typeof updates] === undefined) {
-        delete updates[key as keyof typeof updates];
-      }
-    });
+    if (body.buildingId !== undefined) updates.buildingId = body.buildingId;
+    if (body.securityStaffId !== undefined) updates.securityStaffId = body.securityStaffId;
+    if (body.shiftType !== undefined) updates.shiftType = body.shiftType;
+    if (body.startTime !== undefined) updates.startTime = new Date(body.startTime);
+    if (body.endTime !== undefined) updates.endTime = new Date(body.endTime);
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.notes !== undefined) updates.notes = body.notes;
 
     const shift = await updateShift(id, updates, context.organizationId);
 
@@ -171,4 +164,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete shift' }, { status: 500 });
   }
 }
-

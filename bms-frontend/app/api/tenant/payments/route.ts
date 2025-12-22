@@ -77,17 +77,18 @@ export async function GET(request: NextRequest) {
     if (Object.keys(dateFilter).length > 0) {
       query.$or = query.$or || [];
       // Apply date filter to both paymentDate and createdAt
-      query.$and = [
+      const andConditions: Record<string, unknown>[] = [
         {
           $or: [{ paymentDate: dateFilter }, { createdAt: dateFilter }],
         },
       ];
       // If we already have $or for method, combine them
       if (method) {
-        query.$and.push({
+        andConditions.push({
           $or: [{ paymentMethod: method }, { method: method }],
         });
       }
+      query.$and = andConditions;
     }
 
     const payments = await db

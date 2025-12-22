@@ -66,7 +66,7 @@ export default function AssignTenantParkingPage() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string>('');
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
   const [monthlyRate, setMonthlyRate] = useState<string>('');
   const [autoGenerateInvoice, setAutoGenerateInvoice] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);

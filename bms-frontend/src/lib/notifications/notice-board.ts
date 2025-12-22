@@ -24,4 +24,3 @@ export async function postNotice(input: PostNoticeInput): Promise<void> {
   // TODO: Implement notice board functionality
   console.log('[Notice Board] Notice posted:', input);
 }
-

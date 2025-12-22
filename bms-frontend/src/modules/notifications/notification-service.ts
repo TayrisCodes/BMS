@@ -259,8 +259,8 @@ export class NotificationService {
 
       const [startHour, startMinute] = preferences.quietHoursStart.split(':').map(Number);
       const [endHour, endMinute] = preferences.quietHoursEnd.split(':').map(Number);
-      const startTime = startHour * 60 + startMinute;
-      const endTime = endHour * 60 + endMinute;
+      const startTime = (startHour ?? 0) * 60 + (startMinute ?? 0);
+      const endTime = (endHour ?? 0) * 60 + (endMinute ?? 0);
 
       // Handle quiet hours that span midnight
       if (startTime > endTime) {

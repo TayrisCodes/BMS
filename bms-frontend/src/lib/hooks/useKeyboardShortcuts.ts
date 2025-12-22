@@ -47,4 +47,3 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = tr
     }
   }, [handleKeyDown, enabled]);
 }
-

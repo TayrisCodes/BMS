@@ -67,7 +67,6 @@ export async function notifyRentChange({
   newRent?: number | null;
   effectiveDate?: Date | string | null;
 }) {
-  const notificationService = new NotificationService();
   const title = 'Rent Updated';
   const message = `Your rent has been updated${unitLabel ? ` for ${unitLabel}` : ''} ${
     effectiveDate ? `effective ${new Date(effectiveDate).toLocaleDateString()}` : ''

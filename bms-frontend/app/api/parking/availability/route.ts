@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
     }
 
     requirePermission(context, 'parking', 'read');
-    validateOrganizationAccess(context);
+    if (!context.organizationId) {
+      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
+    }
+    validateOrganizationAccess(context, context.organizationId);
 
     const { searchParams } = request.nextUrl;
     const buildingId = searchParams.get('buildingId');
@@ -37,4 +40,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

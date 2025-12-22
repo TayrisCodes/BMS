@@ -137,66 +137,77 @@ export async function PATCH(request: Request) {
     if (body.providers.telebirr) {
       updatedProviders.telebirr = {
         ...updatedProviders.telebirr,
-        ...body.providers.telebirr,
-        // Only update secrets if new values are provided (not masked)
-        apiKey:
-          body.providers.telebirr.apiKey && !body.providers.telebirr.apiKey.includes('***')
-            ? body.providers.telebirr.apiKey
-            : updatedProviders.telebirr.apiKey,
-        apiSecret:
-          body.providers.telebirr.apiSecret && !body.providers.telebirr.apiSecret.includes('***')
-            ? body.providers.telebirr.apiSecret
-            : updatedProviders.telebirr.apiSecret,
       };
+      if (body.providers.telebirr.enabled !== undefined) {
+        updatedProviders.telebirr.enabled = body.providers.telebirr.enabled;
+      }
+      // Only update secrets if new values are provided (not masked)
+      if (body.providers.telebirr.apiKey && !body.providers.telebirr.apiKey.includes('***')) {
+        updatedProviders.telebirr.apiKey = body.providers.telebirr.apiKey;
+      }
+      if (body.providers.telebirr.apiSecret && !body.providers.telebirr.apiSecret.includes('***')) {
+        updatedProviders.telebirr.apiSecret = body.providers.telebirr.apiSecret;
+      }
+      if (body.providers.telebirr.merchantId !== undefined) {
+        updatedProviders.telebirr.merchantId = body.providers.telebirr.merchantId;
+      }
     }
 
     if (body.providers.cbeBirr) {
       updatedProviders.cbeBirr = {
         ...updatedProviders.cbeBirr,
-        ...body.providers.cbeBirr,
-        apiKey:
-          body.providers.cbeBirr.apiKey && !body.providers.cbeBirr.apiKey.includes('***')
-            ? body.providers.cbeBirr.apiKey
-            : updatedProviders.cbeBirr.apiKey,
-        apiSecret:
-          body.providers.cbeBirr.apiSecret && !body.providers.cbeBirr.apiSecret.includes('***')
-            ? body.providers.cbeBirr.apiSecret
-            : updatedProviders.cbeBirr.apiSecret,
       };
+      if (body.providers.cbeBirr.enabled !== undefined) {
+        updatedProviders.cbeBirr.enabled = body.providers.cbeBirr.enabled;
+      }
+      if (body.providers.cbeBirr.apiKey && !body.providers.cbeBirr.apiKey.includes('***')) {
+        updatedProviders.cbeBirr.apiKey = body.providers.cbeBirr.apiKey;
+      }
+      if (body.providers.cbeBirr.apiSecret && !body.providers.cbeBirr.apiSecret.includes('***')) {
+        updatedProviders.cbeBirr.apiSecret = body.providers.cbeBirr.apiSecret;
+      }
+      if (body.providers.cbeBirr.merchantId !== undefined) {
+        updatedProviders.cbeBirr.merchantId = body.providers.cbeBirr.merchantId;
+      }
     }
 
     if (body.providers.chapa) {
       updatedProviders.chapa = {
         ...updatedProviders.chapa,
-        ...body.providers.chapa,
-        apiKey:
-          body.providers.chapa.apiKey && !body.providers.chapa.apiKey.includes('***')
-            ? body.providers.chapa.apiKey
-            : updatedProviders.chapa.apiKey,
-        publicKey:
-          body.providers.chapa.publicKey && !body.providers.chapa.publicKey.includes('***')
-            ? body.providers.chapa.publicKey
-            : updatedProviders.chapa.publicKey,
-        webhookSecret:
-          body.providers.chapa.webhookSecret && !body.providers.chapa.webhookSecret.includes('***')
-            ? body.providers.chapa.webhookSecret
-            : updatedProviders.chapa.webhookSecret,
       };
+      if (body.providers.chapa.enabled !== undefined) {
+        updatedProviders.chapa.enabled = body.providers.chapa.enabled;
+      }
+      if (body.providers.chapa.apiKey && !body.providers.chapa.apiKey.includes('***')) {
+        updatedProviders.chapa.apiKey = body.providers.chapa.apiKey;
+      }
+      if (body.providers.chapa.publicKey && !body.providers.chapa.publicKey.includes('***')) {
+        updatedProviders.chapa.publicKey = body.providers.chapa.publicKey;
+      }
+      if (
+        body.providers.chapa.webhookSecret &&
+        !body.providers.chapa.webhookSecret.includes('***')
+      ) {
+        updatedProviders.chapa.webhookSecret = body.providers.chapa.webhookSecret;
+      }
     }
 
     if (body.providers.helloCash) {
       updatedProviders.helloCash = {
         ...updatedProviders.helloCash,
-        ...body.providers.helloCash,
-        apiKey:
-          body.providers.helloCash.apiKey && !body.providers.helloCash.apiKey.includes('***')
-            ? body.providers.helloCash.apiKey
-            : updatedProviders.helloCash.apiKey,
-        apiSecret:
-          body.providers.helloCash.apiSecret && !body.providers.helloCash.apiSecret.includes('***')
-            ? body.providers.helloCash.apiSecret
-            : updatedProviders.helloCash.apiSecret,
       };
+      if (body.providers.helloCash.enabled !== undefined) {
+        updatedProviders.helloCash.enabled = body.providers.helloCash.enabled;
+      }
+      if (body.providers.helloCash.apiKey && !body.providers.helloCash.apiKey.includes('***')) {
+        updatedProviders.helloCash.apiKey = body.providers.helloCash.apiKey;
+      }
+      if (
+        body.providers.helloCash.apiSecret &&
+        !body.providers.helloCash.apiSecret.includes('***')
+      ) {
+        updatedProviders.helloCash.apiSecret = body.providers.helloCash.apiSecret;
+      }
     }
 
     // Update settings
@@ -230,4 +241,3 @@ function maskSecret(secret: string): string {
   }
   return '***' + secret.slice(-4);
 }
-

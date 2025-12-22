@@ -170,4 +170,3 @@ export async function generateAgingReport(
     totalInvoiceCount,
   };
 }
-

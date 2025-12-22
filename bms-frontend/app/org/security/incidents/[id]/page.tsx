@@ -21,6 +21,7 @@ import {
 import { apiGet, apiPut } from '@/lib/utils/api-client';
 import { ArrowLeft, AlertTriangle, Edit, Save, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Incident {
   id: string;
@@ -276,12 +277,15 @@ export default function IncidentDetailPage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-2">
                 {incident.photos.map((photo, index) => (
-                  <img
-                    key={index}
-                    src={photo}
-                    alt={`Incident photo ${index + 1}`}
-                    className="w-full h-32 object-cover rounded"
-                  />
+                  <div key={index} className="relative w-full h-32 rounded overflow-hidden">
+                    <Image
+                      src={photo}
+                      alt={`Incident photo ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="50vw"
+                    />
+                  </div>
                 ))}
               </div>
             </CardContent>
@@ -328,4 +332,3 @@ export default function IncidentDetailPage() {
     </div>
   );
 }
-

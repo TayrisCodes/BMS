@@ -17,6 +17,7 @@ import { apiGet, apiPost } from '@/lib/utils/api-client';
 import { MobileCard } from '@/lib/components/tenant/MobileCard';
 import { QrCode, Download, Share2, Calendar, User, Building2 } from 'lucide-react';
 import QRCode from 'qrcode';
+import Image from 'next/image';
 
 interface Building {
   _id: string;
@@ -78,17 +79,19 @@ export default function NewVisitorQRPage() {
         // Set default building and unit from first active lease
         if (leasesData.leases && leasesData.leases.length > 0) {
           const firstLease = leasesData.leases[0];
-          setFormData((prev) => ({
-            ...prev,
-            buildingId: firstLease.buildingId,
-            unitId: firstLease.unitId,
-          }));
+          if (firstLease) {
+            setFormData((prev) => ({
+              ...prev,
+              buildingId: firstLease.buildingId,
+              unitId: firstLease.unitId,
+            }));
 
-          // Fetch units for this building
-          const unitsData = await apiGet<{ units: Unit[] }>(
-            `/api/units?buildingId=${firstLease.buildingId}`,
-          );
-          setUnits(unitsData.units || []);
+            // Fetch units for this building
+            const unitsData = await apiGet<{ units: Unit[] }>(
+              `/api/units?buildingId=${firstLease.buildingId}`,
+            );
+            setUnits(unitsData.units || []);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -236,11 +239,15 @@ export default function NewVisitorQRPage() {
                 Valid until {new Date(qrCodeData.validUntil).toLocaleString()}
               </p>
               <div className="flex justify-center mb-4">
-                <img
-                  src={qrCodeData.qrCodeImage}
-                  alt="Visitor QR Code"
-                  className="w-64 h-64 border rounded-lg"
-                />
+                <div className="relative w-64 h-64 border rounded-lg">
+                  <Image
+                    src={qrCodeData.qrCodeImage}
+                    alt="Visitor QR Code"
+                    fill
+                    className="object-contain"
+                    sizes="256px"
+                  />
+                </div>
               </div>
             </div>
 
@@ -420,4 +427,3 @@ export default function NewVisitorQRPage() {
     </div>
   );
 }
-

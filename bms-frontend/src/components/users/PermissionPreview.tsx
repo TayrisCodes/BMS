@@ -55,7 +55,10 @@ export function PermissionPreview({ roles }: PermissionPreviewProps) {
         if (!allPermissions[module]) {
           allPermissions[module] = new Set();
         }
-        actions.forEach((action) => allPermissions[module].add(action));
+        const moduleSet = allPermissions[module];
+        if (moduleSet) {
+          actions.forEach((action) => moduleSet.add(action));
+        }
       });
     }
   });
@@ -103,4 +106,3 @@ export function PermissionPreview({ roles }: PermissionPreviewProps) {
     </Card>
   );
 }
-

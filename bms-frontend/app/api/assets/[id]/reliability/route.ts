@@ -99,4 +99,3 @@ export async function GET(request: Request, routeParams: RouteParams) {
     );
   }
 }
-

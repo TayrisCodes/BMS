@@ -137,4 +137,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create access permission' }, { status: 500 });
   }
 }
-

@@ -104,6 +104,44 @@ export default function NewWorkOrderPage() {
     }
   }, [complaintId]);
 
+  const fetchUnits = useCallback(async (bId: string, search?: string) => {
+    try {
+      setLoadingUnits(true);
+      let url = `/api/units?buildingId=${bId}`;
+      if (search && search.trim()) {
+        url += `&search=${encodeURIComponent(search.trim())}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setUnits(data.units || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch units:', err);
+    } finally {
+      setLoadingUnits(false);
+    }
+  }, []);
+
+  const fetchTechnicians = useCallback(async (search?: string) => {
+    try {
+      setLoadingTechnicians(true);
+      let url = '/api/users?role=TECHNICIAN&status=active&limit=100';
+      if (search && search.trim()) {
+        url += `&search=${encodeURIComponent(search.trim())}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        setTechnicians(data.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch technicians:', err);
+    } finally {
+      setLoadingTechnicians(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchBuildings();
     if (complaintId) {
@@ -113,27 +151,17 @@ export default function NewWorkOrderPage() {
     }
   }, [complaintId, fetchComplaint]);
 
-  useEffect(() => {
-    if (buildingId) {
-      fetchUnits(buildingId, unitSearch);
-    } else {
-      setUnits([]);
-    }
-  }, [buildingId]);
-
-  // Fetch technicians on mount
-  useEffect(() => {
-    fetchTechnicians(technicianSearch);
-  }, []);
-
   // Debounced search for units
   useEffect(() => {
-    if (!buildingId) return;
+    if (!buildingId) {
+      setUnits([]);
+      return;
+    }
     const timer = setTimeout(() => {
       fetchUnits(buildingId, unitSearch);
     }, 300);
     return () => clearTimeout(timer);
-  }, [unitSearch, buildingId]);
+  }, [unitSearch, buildingId, fetchUnits]);
 
   // Debounced search for technicians
   useEffect(() => {
@@ -141,7 +169,7 @@ export default function NewWorkOrderPage() {
       fetchTechnicians(technicianSearch);
     }, 300);
     return () => clearTimeout(timer);
-  }, [technicianSearch]);
+  }, [technicianSearch, fetchTechnicians]);
 
   useEffect(() => {
     if (complaint) {
@@ -170,44 +198,6 @@ export default function NewWorkOrderPage() {
       }
     } catch (err) {
       console.error('Failed to fetch buildings:', err);
-    }
-  };
-
-  const fetchUnits = async (bId: string, search?: string) => {
-    try {
-      setLoadingUnits(true);
-      let url = `/api/units?buildingId=${bId}`;
-      if (search && search.trim()) {
-        url += `&search=${encodeURIComponent(search.trim())}`;
-      }
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setUnits(data.units || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch units:', err);
-    } finally {
-      setLoadingUnits(false);
-    }
-  };
-
-  const fetchTechnicians = async (search?: string) => {
-    try {
-      setLoadingTechnicians(true);
-      let url = '/api/users?role=TECHNICIAN&status=active&limit=100';
-      if (search && search.trim()) {
-        url += `&search=${encodeURIComponent(search.trim())}`;
-      }
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setTechnicians(data.users || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch technicians:', err);
-    } finally {
-      setLoadingTechnicians(false);
     }
   };
 
@@ -271,23 +261,31 @@ export default function NewWorkOrderPage() {
   // Memoize options for SearchableSelect components
   const unitOptions = useMemo<SearchableSelectOption[]>(
     () =>
-      units.map((unit) => ({
-        value: unit._id,
-        label: unit.unitNumber,
-        description: unit.floor
+      units.map((unit) => {
+        const description = unit.floor
           ? `Floor ${unit.floor}${unit.unitType ? ` • ${unit.unitType}` : ''}`
-          : unit.unitType || undefined,
-      })),
+          : unit.unitType || undefined;
+        return {
+          value: unit._id,
+          label: unit.unitNumber,
+          ...(description ? { description } : {}),
+        };
+      }),
     [units],
   );
 
   const technicianOptions = useMemo<SearchableSelectOption[]>(
     () =>
-      technicians.map((tech) => ({
-        value: tech.id,
-        label: tech.name || tech.email || tech.phone,
-        description: tech.email ? `${tech.phone}${tech.name ? ` • ${tech.name}` : ''}` : tech.phone,
-      })),
+      technicians.map((tech) => {
+        const description = tech.email
+          ? `${tech.phone}${tech.name ? ` • ${tech.name}` : ''}`
+          : tech.phone;
+        return {
+          value: tech.id,
+          label: tech.name || tech.email || tech.phone,
+          ...(description ? { description } : {}),
+        };
+      }),
     [technicians],
   );
 
@@ -373,7 +371,7 @@ export default function NewWorkOrderPage() {
                   <Label htmlFor="unitId">Unit (Optional)</Label>
                   <SearchableSelect
                     options={unitOptions}
-                    value={unitId}
+                    {...(unitId ? { value: unitId } : {})}
                     onValueChange={setUnitId}
                     placeholder="Select a unit (optional)"
                     searchPlaceholder="Search units..."
@@ -479,7 +477,7 @@ export default function NewWorkOrderPage() {
                 <Label htmlFor="assignedTo">Assign To Technician (Optional)</Label>
                 <SearchableSelect
                   options={technicianOptions}
-                  value={assignedTo}
+                  {...(assignedTo ? { value: assignedTo } : {})}
                   onValueChange={setAssignedTo}
                   placeholder="Select a technician (optional)"
                   searchPlaceholder="Search technicians by name, email, or phone..."

@@ -172,7 +172,7 @@ export async function POST(request: Request, routeParams: RouteParams) {
         provider: intent.provider,
         webhookPayload: body,
       },
-      providerTransactionId: verificationResult.transactionId || null,
+      providerTransactionId: verificationResult.referenceNumber || null,
       currency: intent.currency || 'ETB',
     });
 
@@ -201,7 +201,7 @@ export async function POST(request: Request, routeParams: RouteParams) {
       await notificationService.createNotification({
         organizationId: intent.organizationId,
         tenantId: intent.tenantId,
-        type: 'payment_completed',
+        type: 'payment_received',
         title: 'Payment Completed',
         message: `Your payment of ${intent.currency || 'ETB'} ${payment.amount.toLocaleString()} has been processed successfully.`,
         channels: ['in_app', 'email', 'sms'],

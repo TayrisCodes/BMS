@@ -337,4 +337,3 @@ export async function deleteSecurityStaff(
     return false;
   }
 }
-

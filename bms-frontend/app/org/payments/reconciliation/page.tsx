@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/lib/components/ui/button';
 import {
   Select,
@@ -58,11 +58,7 @@ export default function PaymentReconciliationPage() {
   const [bankStatementRef, setBankStatementRef] = useState('');
   const [reconciliationNotes, setReconciliationNotes] = useState('');
 
-  useEffect(() => {
-    fetchPayments();
-  }, [statusFilter]);
-
-  async function fetchPayments() {
+  const fetchPayments = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await apiGet<{ payments: Payment[] }>(
@@ -74,7 +70,11 @@ export default function PaymentReconciliationPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   function togglePaymentSelection(paymentId: string) {
     const newSelection = new Set(selectedPayments);
@@ -286,4 +286,3 @@ export default function PaymentReconciliationPage() {
     </DashboardPage>
   );
 }
-

@@ -85,4 +85,3 @@ export async function POST(request: Request, routeParams: RouteParams) {
     return NextResponse.json({ error: 'Unexpected error while sending invoice' }, { status: 500 });
   }
 }
-

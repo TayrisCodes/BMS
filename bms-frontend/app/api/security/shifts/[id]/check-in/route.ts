@@ -60,4 +60,3 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Failed to check in to shift' }, { status: 500 });
   }
 }
-

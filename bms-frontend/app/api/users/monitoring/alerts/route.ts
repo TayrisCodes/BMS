@@ -78,10 +78,11 @@ export async function GET(request: NextRequest) {
     const failedLoginUserIds = failedLogins.map((f) => f._id).filter(Boolean);
     if (failedLoginUserIds.length > 0) {
       const { ObjectId } = await import('mongodb');
+      const userIds = failedLoginUserIds.map((id) => new ObjectId(id as string));
       const users = await usersCollection
         .find({
-          _id: { $in: failedLoginUserIds.map((id) => new ObjectId(id as string)) },
-        })
+          _id: { $in: userIds },
+        } as any)
         .toArray();
 
       const userMap = new Map<string, any>();
@@ -187,4 +188,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch security alerts' }, { status: 500 });
   }
 }
-

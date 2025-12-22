@@ -37,4 +37,3 @@ export async function ensurePushSubscriptionIndexes(db?: Db): Promise<void> {
 
   await collection.createIndexes(indexes);
 }
-

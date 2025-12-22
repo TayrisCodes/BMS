@@ -100,11 +100,7 @@ export default function ShiftsPage() {
   }
 
   return (
-    <DashboardPage
-      title="Shift Schedule"
-      description="View and manage security staff shifts"
-      icon={<Clock className="h-5 w-5" />}
-    >
+    <DashboardPage title="Shift Schedule">
       <div className="col-span-full flex justify-between items-center">
         <div className="flex gap-2">
           <Link href="/org/security/shifts/new">
@@ -212,4 +208,3 @@ export default function ShiftsPage() {
     </DashboardPage>
   );
 }
-

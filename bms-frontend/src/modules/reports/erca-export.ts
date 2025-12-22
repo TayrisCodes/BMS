@@ -382,4 +382,3 @@ export function convertERCAToCSV(data: ERCAExportData, type: ERCAExportType): st
 
   return lines.join('\n');
 }
-

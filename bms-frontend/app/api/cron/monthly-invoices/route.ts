@@ -108,4 +108,3 @@ export async function GET(request: Request) {
     security: 'Protected by CRON_SECRET environment variable',
   });
 }
-

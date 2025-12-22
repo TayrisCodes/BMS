@@ -79,4 +79,3 @@ export interface UpdateConversationRequest {
   status?: ConversationStatus;
   subject?: string;
 }
-

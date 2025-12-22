@@ -80,4 +80,3 @@ export async function GET(request: Request, routeParams: RouteParams) {
   const docs = lease.documents ?? [];
   return NextResponse.json({ documents: docs, count: docs.length });
 }
-

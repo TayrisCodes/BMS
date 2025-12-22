@@ -111,4 +111,3 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Failed to upload photos' }, { status: 500 });
   }
 }
-

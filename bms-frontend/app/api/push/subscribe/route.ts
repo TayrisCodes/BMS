@@ -3,6 +3,7 @@ import { getAuthContextFromCookies } from '@/lib/auth/session';
 import {
   getPushSubscriptionsCollection,
   ensurePushSubscriptionIndexes,
+  type PushSubscription,
 } from '@/lib/db/push-subscriptions';
 import { ObjectId } from 'mongodb';
 import { getDb } from '@/lib/db';
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Check if subscription already exists
     const existing = await subscriptionsCollection.findOne({ endpoint });
 
-    const subscriptionData = {
+    const subscriptionData: Omit<PushSubscription, '_id'> = {
       userId: null,
       tenantId: context.tenantId ? new ObjectId(context.tenantId) : null,
       organizationId: new ObjectId(context.organizationId),
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
         { endpoint },
         {
           $set: {
-            tenantId: subscriptionData.tenantId,
+            tenantId: subscriptionData.tenantId ?? null,
             organizationId: subscriptionData.organizationId,
             keys: subscriptionData.keys,
             updatedAt: subscriptionData.updatedAt,
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Create new subscription
-      await subscriptionsCollection.insertOne(subscriptionData);
+      await subscriptionsCollection.insertOne(subscriptionData as PushSubscription);
     }
 
     return NextResponse.json({ success: true, message: 'Subscribed to push notifications' });
@@ -87,4 +88,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

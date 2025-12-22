@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     // Require permission to read reports
-    requirePermission(context, 'reports', 'read');
+    requirePermission(context, 'reporting', 'read');
 
     const organizationId = context.organizationId;
     if (!organizationId) {
@@ -188,7 +188,7 @@ export async function GET(request: Request) {
 
       const doc = await pdf(ERCAPdf).toBuffer();
 
-      return new Response(doc, {
+      return new NextResponse(doc as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="erca-${type}-${startDate.toISOString().split('T')[0]}-${endDate.toISOString().split('T')[0]}.pdf"`,

@@ -202,7 +202,7 @@ export const botCommands: BotCommand[] = [
 ];
 
 export function findCommand(input: string): BotCommand | null {
-  const commandName = input.split(' ')[0].replace('/', '').toLowerCase();
+  const commandName = input.split(' ')[0]!.replace('/', '').toLowerCase();
   return (
     botCommands.find(
       (cmd) =>

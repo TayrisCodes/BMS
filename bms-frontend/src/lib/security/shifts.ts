@@ -508,4 +508,3 @@ export async function deleteShift(shiftId: string, organizationId?: string): Pro
     return false;
   }
 }
-

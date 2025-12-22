@@ -7,6 +7,7 @@ import { Badge } from '@/lib/components/ui/badge';
 import { apiGet } from '@/lib/utils/api-client';
 import { Building2, User, Phone, Calendar, MapPin, Download } from 'lucide-react';
 import QRCode from 'qrcode';
+import Image from 'next/image';
 
 interface QRCodeDetails {
   qrCode: {
@@ -144,12 +145,16 @@ export default function ShareableQRCodePage() {
               {/* QR Code */}
               <div className="flex justify-center">
                 {qrCodeImage && (
-                  <div className="relative">
-                    <img
-                      src={qrCodeImage}
-                      alt="Visitor QR Code"
-                      className="w-64 h-64 border-4 border-white rounded-lg shadow-lg"
-                    />
+                  <div className="relative w-64 h-64">
+                    <div className="relative w-full h-full border-4 border-white rounded-lg shadow-lg overflow-hidden">
+                      <Image
+                        src={qrCodeImage}
+                        alt="Visitor QR Code"
+                        fill
+                        className="object-contain"
+                        sizes="256px"
+                      />
+                    </div>
                     {!isValid && (
                       <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                         <Badge variant="destructive" className="text-lg px-4 py-2">

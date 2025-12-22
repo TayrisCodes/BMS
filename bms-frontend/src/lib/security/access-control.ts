@@ -169,8 +169,8 @@ function validateRestrictions(restrictions: AccessPermission['restrictions']): v
       // Parse times to validate startTime < endTime
       const [startHour, startMin] = window.startTime.split(':').map(Number);
       const [endHour, endMin] = window.endTime.split(':').map(Number);
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
+      const startMinutes = (startHour ?? 0) * 60 + (startMin ?? 0);
+      const endMinutes = (endHour ?? 0) * 60 + (endMin ?? 0);
 
       if (endMinutes <= startMinutes) {
         throw new Error('endTime must be after startTime');
@@ -401,9 +401,9 @@ export function isAccessAllowedAtTime(
         const [endHour, endMin] = window.endTime.split(':').map(Number);
         const [checkHour, checkMin] = time.split(':').map(Number);
 
-        const startMinutes = startHour * 60 + startMin;
-        const endMinutes = endHour * 60 + endMin;
-        const checkMinutes = checkHour * 60 + checkMin;
+        const startMinutes = (startHour ?? 0) * 60 + (startMin ?? 0);
+        const endMinutes = (endHour ?? 0) * 60 + (endMin ?? 0);
+        const checkMinutes = (checkHour ?? 0) * 60 + (checkMin ?? 0);
 
         if (checkMinutes >= startMinutes && checkMinutes <= endMinutes) {
           return true;
@@ -507,4 +507,3 @@ export async function deleteAccessPermission(
     return false;
   }
 }
-

@@ -173,10 +173,12 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<Work
   }
 
   // Convert date strings to Date objects
-  const scheduledDate =
+  const scheduledDate: Date | null =
     input.scheduledDate && typeof input.scheduledDate === 'string'
       ? new Date(input.scheduledDate)
-      : input.scheduledDate || null;
+      : input.scheduledDate instanceof Date
+        ? input.scheduledDate
+        : null;
 
   const scheduledTimeWindow = input.scheduledTimeWindow
     ? {

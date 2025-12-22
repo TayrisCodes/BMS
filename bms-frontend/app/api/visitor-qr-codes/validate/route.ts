@@ -93,6 +93,16 @@ export async function POST(request: NextRequest) {
       // Mark QR code as used
       await markQRCodeAsUsed(qrCodeDoc._id, visitorLog._id);
 
+      // Get tenant, unit, and building details for notification and response
+      const { findTenantById } = await import('@/lib/tenants/tenants');
+      const { findUnitById } = await import('@/lib/units/units');
+      const { findBuildingById } = await import('@/lib/buildings/buildings');
+      const tenant = await findTenantById(qrCodeDoc.tenantId, qrCodeDoc.organizationId);
+      const unit = qrCodeDoc.unitId
+        ? await findUnitById(qrCodeDoc.unitId, qrCodeDoc.organizationId)
+        : null;
+      const building = await findBuildingById(qrCodeDoc.buildingId, qrCodeDoc.organizationId);
+
       // Send visitor arrival notification to tenant
       try {
         const { notifyVisitorArrived } = await import('@/modules/notifications/security-events');
@@ -110,16 +120,6 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send visitor arrival notification:', error);
         // Don't fail the request if notification fails
       }
-
-      // Get tenant, unit, and building details for response
-      const { findTenantById } = await import('@/lib/tenants/tenants');
-      const { findUnitById } = await import('@/lib/units/units');
-      const { findBuildingById } = await import('@/lib/buildings/buildings');
-      const tenant = await findTenantById(qrCodeDoc.tenantId, qrCodeDoc.organizationId);
-      const unit = qrCodeDoc.unitId
-        ? await findUnitById(qrCodeDoc.unitId, qrCodeDoc.organizationId)
-        : null;
-      const building = await findBuildingById(qrCodeDoc.buildingId, qrCodeDoc.organizationId);
 
       return NextResponse.json(
         {

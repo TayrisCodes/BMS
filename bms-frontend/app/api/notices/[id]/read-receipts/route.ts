@@ -20,9 +20,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'read');
-    validateOrganizationAccess(context);
 
     const notice = await findNoticeById(params.id, context.organizationId);
+    if (!notice) {
+      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
+    }
+    validateOrganizationAccess(context, notice.organizationId);
 
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
@@ -34,4 +37,3 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Failed to fetch read receipts' }, { status: 500 });
   }
 }
-

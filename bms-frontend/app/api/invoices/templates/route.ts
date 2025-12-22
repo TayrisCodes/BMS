@@ -5,8 +5,8 @@ import {
   createInvoiceTemplate,
   listInvoiceTemplates,
   type CreateInvoiceTemplateInput,
-  type InvoiceItem,
 } from '@/lib/invoices/templates';
+import { type InvoiceItem } from '@/lib/invoices/invoices';
 
 /**
  * GET /api/invoices/templates
@@ -163,4 +163,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

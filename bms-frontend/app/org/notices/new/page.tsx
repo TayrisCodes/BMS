@@ -114,11 +114,7 @@ export default function NewNoticePage() {
   }
 
   return (
-    <DashboardPage
-      title="Create Notice"
-      description="Create a new building notice or announcement"
-      icon={<Bell className="h-5 w-5" />}
-    >
+    <DashboardPage title="Create Notice">
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/notices">
@@ -321,4 +317,3 @@ export default function NewNoticePage() {
     </DashboardPage>
   );
 }
-

@@ -35,7 +35,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'update');
-    validateOrganizationAccess(context);
 
     const organizationId = context.organizationId;
     if (!organizationId) {
@@ -46,6 +45,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
+    validateOrganizationAccess(context, notice.organizationId);
 
     const formData = await request.formData();
     const files = formData.getAll('attachments') as File[];
@@ -101,4 +101,3 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
-

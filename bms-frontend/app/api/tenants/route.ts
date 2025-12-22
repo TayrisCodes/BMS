@@ -227,10 +227,12 @@ export async function POST(request: Request) {
           unitId: body.unitId,
           startDate: body.leaseData.startDate,
           endDate: body.leaseData.endDate || null,
-          rentAmount: body.leaseData.rentAmount,
-          depositAmount: body.leaseData.depositAmount || null,
           billingCycle: body.leaseData.billingCycle,
           dueDay: body.leaseData.dueDay,
+          terms: {
+            rent: body.leaseData.rentAmount,
+            deposit: body.leaseData.depositAmount || null,
+          },
           status: 'active',
         });
       } catch (leaseError) {

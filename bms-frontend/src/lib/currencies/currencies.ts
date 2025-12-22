@@ -361,4 +361,3 @@ export async function convertCurrency(
 
   return amountInPrimary;
 }
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/lib/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/lib/components/ui/card';
@@ -25,12 +25,9 @@ export default function MessagesPage() {
   const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('active');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTenantId, setSelectedTenantId] = useState<string>('');
 
-  useEffect(() => {
-    loadConversations();
-  }, [statusFilter]);
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet<{ conversations: Conversation[] }>(
@@ -42,7 +39,11 @@ export default function MessagesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
 
   const filteredConversations = conversations.filter((conv) => {
     if (!searchQuery) return true;
@@ -122,7 +123,7 @@ export default function MessagesPage() {
             window.history.replaceState({}, '', url.toString());
           }
         }}
-        tenantId={selectedTenantId || undefined}
+        {...(selectedTenantId ? { tenantId: selectedTenantId } : {})}
       />
     </div>
   );
