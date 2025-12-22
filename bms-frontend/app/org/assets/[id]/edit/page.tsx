@@ -219,8 +219,7 @@ export default function EditAssetPage() {
   function formatDateForInput(dateString: string | null | undefined): string {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const datePart = date.toISOString().split('T')[0];
-    return datePart || '';
+    return date.toISOString().split('T')[0];
   }
 
   if (isLoading) {

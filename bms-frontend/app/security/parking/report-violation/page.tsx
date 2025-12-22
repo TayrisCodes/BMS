@@ -107,7 +107,7 @@ export default function ReportViolationPage() {
   }
 
   return (
-    <SecurityMobileLayout>
+    <SecurityMobileLayout title="Report Violation">
       <div className="space-y-4 p-4">
         <Link href="/security/parking/violations">
           <Button variant="ghost" size="icon">

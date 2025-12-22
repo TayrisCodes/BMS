@@ -129,7 +129,11 @@ export default function NewViolationPage() {
   }
 
   return (
-    <DashboardPage title="Report Parking Violation">
+    <DashboardPage
+      title="Report Parking Violation"
+      description="Create a new parking violation report"
+      icon={<AlertTriangle className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/parking/violations">

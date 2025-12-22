@@ -50,10 +50,7 @@ export function KeyboardShortcutsDialog({ open, onOpenChange }: KeyboardShortcut
       if (!acc[shortcut.category]) {
         acc[shortcut.category] = [];
       }
-      const categoryArray = acc[shortcut.category];
-      if (categoryArray) {
-        categoryArray.push(shortcut);
-      }
+      acc[shortcut.category].push(shortcut);
       return acc;
     },
     {} as Record<string, Shortcut[]>,

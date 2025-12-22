@@ -3,7 +3,7 @@ import { getAuthContextFromCookies } from '@/lib/auth/session';
 import { getUsersCollection } from '@/lib/auth/users';
 import { getTenantsCollection } from '@/lib/tenants/tenants';
 import { pushNotificationProvider } from '@/modules/notifications/providers/push';
-import type webpush from 'web-push';
+import type { PushSubscription } from 'web-push';
 
 /**
  * POST /api/notifications/push/subscribe
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         { _id: new ObjectId(context.tenantId) } as any,
         {
           $set: {
-            pushSubscription: subscription as webpush.PushSubscription,
+            pushSubscription: subscription as PushSubscription,
             updatedAt: new Date(),
           },
         } as any,
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         { _id: new ObjectId(context.userId) } as any,
         {
           $set: {
-            pushSubscription: subscription as webpush.PushSubscription,
+            pushSubscription: subscription as PushSubscription,
             updatedAt: new Date(),
           },
         } as any,

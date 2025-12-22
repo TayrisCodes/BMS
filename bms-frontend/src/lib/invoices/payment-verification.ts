@@ -58,7 +58,7 @@ export async function verifyTenantPaymentStatus(
 
   // Separate invoices by status
   const unpaidInvoices = allInvoices.filter(
-    (inv) => inv.status === 'overdue' || inv.status === 'sent',
+    (inv) => inv.status === 'pending' || inv.status === 'overdue' || inv.status === 'sent',
   );
 
   // Calculate overdue invoices (unpaid and past due date)

@@ -162,13 +162,7 @@ export default function NewIncidentPage() {
 
   function updateInvolvedParty(index: number, field: string, value: string) {
     const updated = [...formData.involvedParties];
-    const existing = updated[index];
-    if (existing) {
-      updated[index] = {
-        ...existing,
-        [field]: value,
-      } as { name: string; role: 'tenant' | 'visitor' | 'staff' | 'unknown'; contactInfo?: string };
-    }
+    updated[index] = { ...updated[index], [field]: value };
     setFormData({ ...formData, involvedParties: updated });
   }
 

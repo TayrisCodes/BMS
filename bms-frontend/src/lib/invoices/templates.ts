@@ -137,7 +137,7 @@ export async function getDefaultInvoiceTemplate(
   organizationId: string,
 ): Promise<InvoiceTemplate | null> {
   const templates = await listInvoiceTemplates(organizationId, true);
-  return templates.length > 0 && templates[0] ? templates[0] : null;
+  return templates.length > 0 ? templates[0] : null;
 }
 
 export interface UpdateInvoiceTemplateInput {
@@ -275,7 +275,7 @@ export function applyInvoiceTemplate(
     vatRate: template.defaultVATRate ?? 15,
     headerText,
     footerText,
-    ...(template.customFields !== undefined ? { customFields: template.customFields } : {}),
+    customFields: template.customFields,
   };
 }
 

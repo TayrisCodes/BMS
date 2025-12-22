@@ -69,7 +69,13 @@ export default function TenantNoticesPage() {
   const unreadCount = notices.filter((n) => !n.isRead).length;
 
   return (
-    <DashboardPage title="Notice Board">
+    <DashboardPage
+      header={{
+        title: 'Notice Board',
+        description: 'Building announcements and updates',
+        icon: Bell,
+      }}
+    >
       {unreadCount > 0 && (
         <div className="mb-4 p-4 bg-primary/10 rounded-lg">
           <p className="text-sm font-medium">

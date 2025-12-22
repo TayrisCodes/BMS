@@ -38,7 +38,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: applicationServerKey as BufferSource,
+      applicationServerKey,
     });
 
     // Send subscription to server

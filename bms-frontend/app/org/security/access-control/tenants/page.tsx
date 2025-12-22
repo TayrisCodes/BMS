@@ -93,7 +93,11 @@ export default function TenantAccessPage() {
   }
 
   return (
-    <DashboardPage title="Manage Tenant Access">
+    <DashboardPage
+      title="Manage Tenant Access"
+      description="Create and manage access permissions for tenants"
+      icon={<Shield className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/security/access-control">

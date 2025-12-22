@@ -7,7 +7,7 @@ import {
   deleteInvoiceTemplate,
   type UpdateInvoiceTemplateInput,
 } from '@/lib/invoices/templates';
-import { type InvoiceItem } from '@/lib/invoices/invoices';
+import type { InvoiceItem } from '@/lib/invoices/invoices';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -100,16 +100,15 @@ export async function PUT(request: Request, routeParams: RouteParams) {
       defaultItems?: InvoiceItem[];
     };
 
-    const input: UpdateInvoiceTemplateInput = {
-      ...(body.name !== undefined && { name: body.name }),
-      ...(body.description !== undefined && { description: body.description ?? null }),
-      ...(body.defaultItems !== undefined && { defaultItems: body.defaultItems }),
-      ...(body.defaultVATRate !== undefined && { defaultVATRate: body.defaultVATRate ?? null }),
-      ...(body.headerText !== undefined && { headerText: body.headerText ?? null }),
-      ...(body.footerText !== undefined && { footerText: body.footerText ?? null }),
-      ...(body.customFields !== undefined && { customFields: body.customFields ?? null }),
-      ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
-    };
+    const input: UpdateInvoiceTemplateInput = {};
+    if (body.name !== undefined) input.name = body.name;
+    if (body.description !== undefined) input.description = body.description;
+    if (body.defaultItems !== undefined) input.defaultItems = body.defaultItems;
+    if (body.defaultVATRate !== undefined) input.defaultVATRate = body.defaultVATRate;
+    if (body.headerText !== undefined) input.headerText = body.headerText;
+    if (body.footerText !== undefined) input.footerText = body.footerText;
+    if (body.customFields !== undefined) input.customFields = body.customFields;
+    if (body.isDefault !== undefined) input.isDefault = body.isDefault;
 
     try {
       const updatedTemplate = await updateInvoiceTemplate(id, input, organizationId);

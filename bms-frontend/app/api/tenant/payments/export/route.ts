@@ -68,17 +68,16 @@ export async function GET(request: NextRequest) {
     }
     if (Object.keys(dateFilter).length > 0) {
       query.$or = query.$or || [];
-      const andConditions: Record<string, unknown>[] = [
+      query.$and = [
         {
           $or: [{ paymentDate: dateFilter }, { createdAt: dateFilter }],
         },
       ];
       if (method) {
-        andConditions.push({
+        query.$and.push({
           $or: [{ paymentMethod: method }, { method: method }],
         });
       }
-      query.$and = andConditions;
     }
 
     const payments = await db

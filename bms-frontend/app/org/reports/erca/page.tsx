@@ -18,9 +18,9 @@ import { Download, FileText } from 'lucide-react';
 
 export default function ERCAReportsPage() {
   const [startDate, setStartDate] = useState<string>(
-    new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0]!,
+    new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
   );
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]!);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [reportType, setReportType] = useState<'monthly' | 'quarterly'>('monthly');
   const [exportType, setExportType] = useState<'invoices' | 'payments' | 'summary'>('summary');
 

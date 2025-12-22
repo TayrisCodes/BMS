@@ -101,31 +101,42 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         photos?: string[] | null;
         documents?: string[] | null;
       }
-    > = {};
-
-    if (body.buildingId !== undefined) updates.buildingId = body.buildingId;
-    if (body.unitId !== undefined) updates.unitId = body.unitId;
-    if (body.incidentType !== undefined) updates.incidentType = body.incidentType;
-    if (body.severity !== undefined) updates.severity = body.severity;
-    if (body.title !== undefined) updates.title = body.title;
-    if (body.description !== undefined) updates.description = body.description;
-    if (body.location !== undefined) updates.location = body.location;
-    if (body.involvedParties !== undefined) updates.involvedParties = body.involvedParties;
-    if (body.status !== undefined) updates.status = body.status;
-    if (body.resolvedAt !== undefined) {
-      updates.resolvedAt = body.resolvedAt ? new Date(body.resolvedAt) : null;
-    }
-    if (body.resolutionNotes !== undefined) updates.resolutionNotes = body.resolutionNotes;
-    if (body.resolvedBy !== undefined) updates.resolvedBy = body.resolvedBy;
-    if (body.photos !== undefined) updates.photos = body.photos;
-    if (body.documents !== undefined) updates.documents = body.documents;
-    if (body.linkedVisitorLogId !== undefined) updates.linkedVisitorLogId = body.linkedVisitorLogId;
-    if (body.linkedComplaintId !== undefined) updates.linkedComplaintId = body.linkedComplaintId;
+    > = {
+      buildingId: body.buildingId !== undefined ? body.buildingId : undefined,
+      unitId: body.unitId !== undefined ? body.unitId : undefined,
+      incidentType: body.incidentType !== undefined ? body.incidentType : undefined,
+      severity: body.severity !== undefined ? body.severity : undefined,
+      title: body.title !== undefined ? body.title : undefined,
+      description: body.description !== undefined ? body.description : undefined,
+      location: body.location !== undefined ? body.location : undefined,
+      involvedParties: body.involvedParties !== undefined ? body.involvedParties : undefined,
+      status: body.status !== undefined ? body.status : undefined,
+      resolvedAt:
+        body.resolvedAt !== undefined
+          ? body.resolvedAt
+            ? new Date(body.resolvedAt)
+            : null
+          : undefined,
+      resolutionNotes: body.resolutionNotes !== undefined ? body.resolutionNotes : undefined,
+      resolvedBy: body.resolvedBy !== undefined ? body.resolvedBy : undefined,
+      photos: body.photos !== undefined ? body.photos : undefined,
+      documents: body.documents !== undefined ? body.documents : undefined,
+      linkedVisitorLogId:
+        body.linkedVisitorLogId !== undefined ? body.linkedVisitorLogId : undefined,
+      linkedComplaintId: body.linkedComplaintId !== undefined ? body.linkedComplaintId : undefined,
+    };
 
     // If resolving, set resolvedBy to current user if not provided
     if (updates.status === 'resolved' && !updates.resolvedBy && context.userId) {
       updates.resolvedBy = context.userId;
     }
+
+    // Remove undefined values
+    Object.keys(updates).forEach((key) => {
+      if (updates[key as keyof typeof updates] === undefined) {
+        delete updates[key as keyof typeof updates];
+      }
+    });
 
     const incident = await updateIncident(id, updates, context.organizationId);
 

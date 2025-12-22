@@ -98,7 +98,7 @@ async function invoiceExistsForPeriod(
 function computeLateFee(lease: Lease, amountBase: number, dueDate: Date, asOf: Date): number {
   const cfg = lease.penaltyConfig;
   if (!cfg || !cfg.lateFeeRatePerDay) return 0;
-  const grace = cfg.gracePeriodDays ?? 0;
+  const grace = cfg.lateFeeGraceDays ?? cfg.gracePeriodDays ?? 0;
   const cap = cfg.lateFeeCapDays ?? null;
   const daysLateRaw = Math.floor((asOf.getTime() - dueDate.getTime()) / DAY_MS);
   const daysLate = Math.max(0, daysLateRaw - grace);
@@ -132,12 +132,10 @@ async function applyLateFeesForOrg(organizationId: string, asOf: Date): Promise<
           ]
         : itemsWithoutPenalty;
 
-    const vatRateValue: number | null =
-      invoice.vatRate ?? lease.terms.vatRate ?? lease.vatRate ?? null;
     await updateInvoice(invoice._id, {
       items: updatedItems,
       status: 'overdue',
-      ...(vatRateValue !== null ? { vatRate: vatRateValue } : {}),
+      vatRate: invoice.vatRate ?? lease.terms.vatRate ?? lease.vatRate,
     }).catch((err) => {
       console.error('Failed to apply late fee for invoice', invoice._id, err);
     });
@@ -190,7 +188,7 @@ export async function runLeaseInvoicingForOrg(organizationId: string, asOf: Date
       periodStart,
       periodEnd,
       items,
-      ...(vatRate !== undefined ? { vatRate: vatRate ?? null } : {}),
+      vatRate: vatRate ?? undefined,
       status: 'sent',
       tax: totals.tax,
     }).catch((err) => {

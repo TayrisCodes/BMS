@@ -98,7 +98,11 @@ export default function IncidentReportsPage() {
   }, [filters]);
 
   return (
-    <DashboardPage title="Incident Reports & Analytics">
+    <DashboardPage
+      title="Incident Reports & Analytics"
+      description="View security incident statistics and trends"
+      icon={<FileText className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <Card>
           <CardHeader>

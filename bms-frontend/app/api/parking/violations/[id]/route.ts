@@ -25,19 +25,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'read');
-    if (!context.organizationId) {
-      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
-    }
 
     const violation = await findParkingViolationById(params.id, context.organizationId);
-    if (!violation) {
-      return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
-    }
-    validateOrganizationAccess(context, violation.organizationId);
 
     if (!violation) {
       return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
     }
+
+    validateOrganizationAccess(context, violation.organizationId);
 
     return NextResponse.json({ violation });
   } catch (error) {
@@ -59,15 +54,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'update');
-    if (!context.organizationId) {
-      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
-    }
 
-    const violation = await findParkingViolationById(params.id, context.organizationId);
-    if (!violation) {
+    const existingViolation = await findParkingViolationById(params.id, context.organizationId);
+    if (!existingViolation) {
       return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
     }
-    validateOrganizationAccess(context, violation.organizationId);
+
+    validateOrganizationAccess(context, existingViolation.organizationId);
 
     const updates = await request.json();
 
@@ -106,15 +99,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'delete');
-    if (!context.organizationId) {
-      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
-    }
 
-    const violation = await findParkingViolationById(params.id, context.organizationId);
-    if (!violation) {
+    const existingViolation = await findParkingViolationById(params.id, context.organizationId);
+    if (!existingViolation) {
       return NextResponse.json({ error: 'Parking violation not found' }, { status: 404 });
     }
-    validateOrganizationAccess(context, violation.organizationId);
+
+    validateOrganizationAccess(context, existingViolation.organizationId);
 
     const deleted = await deleteParkingViolation(params.id, context.organizationId);
 

@@ -154,12 +154,10 @@ export async function createMaintenanceTask(
   // Convert dates
   const nextDueDate =
     typeof input.nextDueDate === 'string' ? new Date(input.nextDueDate) : input.nextDueDate;
-  const lastPerformed: Date | null =
+  const lastPerformed =
     input.lastPerformed && typeof input.lastPerformed === 'string'
       ? new Date(input.lastPerformed)
-      : input.lastPerformed instanceof Date
-        ? input.lastPerformed
-        : null;
+      : input.lastPerformed || null;
 
   // Determine initial status based on due date
   let status: MaintenanceTaskStatus = 'pending';

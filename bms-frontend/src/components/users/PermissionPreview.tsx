@@ -55,10 +55,7 @@ export function PermissionPreview({ roles }: PermissionPreviewProps) {
         if (!allPermissions[module]) {
           allPermissions[module] = new Set();
         }
-        const moduleSet = allPermissions[module];
-        if (moduleSet) {
-          actions.forEach((action) => moduleSet.add(action));
-        }
+        actions.forEach((action) => allPermissions[module].add(action));
       });
     }
   });

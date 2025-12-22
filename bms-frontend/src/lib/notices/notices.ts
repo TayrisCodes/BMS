@@ -210,7 +210,7 @@ export async function updateNotice(
     }
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(noticeId), organizationId } as Document,
+      { _id: new ObjectId(noticeId), organizationId },
       { $set: updateDoc },
       { returnDocument: 'after' },
     );
@@ -343,10 +343,7 @@ export async function deleteNotice(noticeId: string, organizationId: string): Pr
   const { ObjectId } = await import('mongodb');
 
   try {
-    const result = await collection.deleteOne({
-      _id: new ObjectId(noticeId),
-      organizationId,
-    } as Document);
+    const result = await collection.deleteOne({ _id: new ObjectId(noticeId), organizationId });
     return result.deletedCount === 1;
   } catch {
     return false;

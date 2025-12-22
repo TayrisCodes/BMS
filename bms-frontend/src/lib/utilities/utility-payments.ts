@@ -225,7 +225,7 @@ export async function updateUtilityPayment(
     }
 
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(paymentId) } as Document,
+      { _id: new ObjectId(paymentId) },
       { $set: updateDoc },
       { returnDocument: 'after' },
     );

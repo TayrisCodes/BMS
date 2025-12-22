@@ -68,7 +68,7 @@ export default function ParkingPricingPage() {
           '/api/parking/pricing',
         );
         setPricing(pricingData.parkingPricing || []);
-        setFilteredPricing(pricingData.parkingPricing || []);
+        setFilteredPricing(pricingData.pricingPricing || []);
 
         // Fetch buildings
         const buildingsData = await apiGet<{ buildings: Building[] }>('/api/buildings').catch(

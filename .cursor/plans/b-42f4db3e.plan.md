@@ -1,4 +1,33 @@
-<!-- 42f4db3e-8663-4dac-850d-341349744ca7 7c7f2512-fd82-4c5a-ba35-8b3dac34b1e1 -->
+---
+name: SaaS BMS – Next.js + MongoDB Implementation Plan
+overview: ""
+todos:
+  - id: 850fb630-451c-49b3-91bc-0e14f84a1e54
+    content: Scaffold Next.js (App Router, TS) project and set up MongoDB with Docker Compose for local development.
+    status: pending
+  - id: cdc4b861-50f6-4c76-9f20-9ea3346106cc
+    content: Implement authentication, organization-based multi-tenancy, and role-based access control in Next.js APIs and middleware.
+    status: pending
+  - id: fd393033-cfe4-4925-a6ec-1f08f8c2b579
+    content: Design MongoDB collections and implement core APIs for organizations, buildings, units, tenants, leases, invoices, and payments.
+    status: pending
+  - id: 08ff88e1-9176-4a52-a8b8-b88d07e6d78d
+    content: Build tenant-facing Next.js routes for dashboard, invoices/payments, complaints, and multi-language support.
+    status: pending
+  - id: d02cf662-7d00-48cd-98b3-cdf1ea203b3a
+    content: Implement admin/staff dashboards for building management, complaints triage, work orders, meters, and basic parking/security flows.
+    status: pending
+  - id: b926d251-53d6-4d5a-9c8d-0ee6d81e5993
+    content: Integrate Telebirr, CBE Birr, Chapa, and HelloCash payment flows with webhook handling and idempotent payment recording.
+    status: pending
+  - id: f8b843c3-31cb-4440-90d4-83ce38888612
+    content: Add notifications (email/SMS/app) and build reporting/export features for finance and operations.
+    status: pending
+  - id: 6eb7b0aa-334f-4612-9ad9-034e03ccecce
+    content: Add tests, logging, security hardening, and define production deployment approach for the SaaS BMS.
+    status: pending
+---
+
 # SaaS BMS – Next.js + MongoDB Implementation Plan
 
 ## Overview
@@ -285,14 +314,3 @@ The plan is organized into phases: platform foundation, core modules, tenant por
 ---
 
 This plan can be converted into an issue/sprint backlog. The early phases (1–4) should be prioritized to get a working MVP for a small number of pilot customers, then iterated forward into the more advanced modules and integrations.
-
-### To-dos
-
-- [ ] Scaffold Next.js (App Router, TS) project and set up MongoDB with Docker Compose for local development.
-- [ ] Implement authentication, organization-based multi-tenancy, and role-based access control in Next.js APIs and middleware.
-- [ ] Design MongoDB collections and implement core APIs for organizations, buildings, units, tenants, leases, invoices, and payments.
-- [ ] Build tenant-facing Next.js routes for dashboard, invoices/payments, complaints, and multi-language support.
-- [ ] Implement admin/staff dashboards for building management, complaints triage, work orders, meters, and basic parking/security flows.
-- [ ] Integrate Telebirr, CBE Birr, Chapa, and HelloCash payment flows with webhook handling and idempotent payment recording.
-- [ ] Add notifications (email/SMS/app) and build reporting/export features for finance and operations.
-- [ ] Add tests, logging, security hardening, and define production deployment approach for the SaaS BMS.

@@ -37,3 +37,5 @@ templates/
 
 Templates are loaded dynamically based on user's preferred language and fallback to English if not available.
 
+
+

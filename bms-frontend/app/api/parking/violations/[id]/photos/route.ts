@@ -28,10 +28,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'update');
-    if (!context.organizationId) {
-      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
-    }
-    validateOrganizationAccess(context, context.organizationId);
 
     const organizationId = context.organizationId;
     if (!organizationId) {
@@ -42,6 +38,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!violation) {
       return NextResponse.json({ error: 'Violation not found' }, { status: 404 });
     }
+
+    validateOrganizationAccess(context, violation.organizationId);
 
     const formData = await request.formData();
     const files = formData.getAll('photos') as File[];

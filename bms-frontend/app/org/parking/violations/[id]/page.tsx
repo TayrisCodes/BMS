@@ -9,7 +9,6 @@ import { apiGet, apiPut } from '@/lib/utils/api-client';
 import { DashboardPage } from '@/lib/components/dashboard/DashboardPage';
 import { AlertTriangle, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { format } from 'date-fns';
 
 interface ParkingViolation {
@@ -96,7 +95,7 @@ export default function ViolationDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardPage title="Violation Details">
+      <DashboardPage title="Violation Details" icon={<AlertTriangle className="h-5 w-5" />}>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Loading violation details...</p>
         </div>
@@ -106,7 +105,7 @@ export default function ViolationDetailPage() {
 
   if (!violation) {
     return (
-      <DashboardPage title="Violation Details">
+      <DashboardPage title="Violation Details" icon={<AlertTriangle className="h-5 w-5" />}>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Violation not found</p>
         </div>
@@ -115,7 +114,11 @@ export default function ViolationDetailPage() {
   }
 
   return (
-    <DashboardPage title="Violation Details">
+    <DashboardPage
+      title="Violation Details"
+      description="View and manage parking violation"
+      icon={<AlertTriangle className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/parking/violations">
@@ -257,18 +260,12 @@ export default function ViolationDetailPage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {violation.photos.map((photo, index) => (
-                  <div
+                  <img
                     key={index}
-                    className="relative w-full h-32 rounded-lg border overflow-hidden"
-                  >
-                    <Image
-                      src={photo}
-                      alt={`Violation photo ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                    />
-                  </div>
+                    src={photo}
+                    alt={`Violation photo ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
                 ))}
               </div>
             </CardContent>

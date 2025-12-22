@@ -49,7 +49,7 @@ export default function NewTemplatePage() {
 
   function updateItem(index: number, field: keyof InvoiceItem, value: string | number) {
     const updated = [...items];
-    updated[index] = { ...updated[index], [field]: value } as InvoiceItem;
+    updated[index] = { ...updated[index], [field]: value };
     setItems(updated);
   }
 

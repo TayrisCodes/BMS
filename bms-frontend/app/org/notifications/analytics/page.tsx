@@ -51,10 +51,10 @@ export default function NotificationAnalyticsPage() {
       try {
         setIsLoading(true);
         const params = new URLSearchParams({
+          startDate,
+          endDate,
           periodType,
         });
-        if (startDate) params.set('startDate', startDate);
-        if (endDate) params.set('endDate', endDate);
         const data = await apiGet<{
           statistics: NotificationStatistics;
           trends: NotificationTrendDataPoint[];
@@ -72,7 +72,13 @@ export default function NotificationAnalyticsPage() {
   }, [startDate, endDate, periodType]);
 
   return (
-    <DashboardPage title="Notification Analytics">
+    <DashboardPage
+      header={{
+        title: 'Notification Analytics',
+        description: 'Track notification delivery and engagement',
+        icon: BarChart3,
+      }}
+    >
       <div className="col-span-full space-y-6">
         <Card>
           <CardHeader>

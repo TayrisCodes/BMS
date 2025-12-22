@@ -111,7 +111,11 @@ export default function VisitorAccessPage() {
   }
 
   return (
-    <DashboardPage title="Manage Visitor Access">
+    <DashboardPage
+      title="Manage Visitor Access"
+      description="Create and manage access permissions for visitors"
+      icon={<Shield className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/security/access-control">

@@ -22,14 +22,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     requirePermission(context, 'notices', 'read');
 
     const notice = await findNoticeById(params.id, context.organizationId);
-    if (!notice) {
-      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
-    }
-    validateOrganizationAccess(context, notice.organizationId);
 
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
+
+    validateOrganizationAccess(context, notice.organizationId);
 
     return NextResponse.json({ readReceipts: notice.readReceipts || [] });
   } catch (error) {

@@ -6,7 +6,7 @@ import {
   listInvoiceTemplates,
   type CreateInvoiceTemplateInput,
 } from '@/lib/invoices/templates';
-import { type InvoiceItem } from '@/lib/invoices/invoices';
+import type { InvoiceItem } from '@/lib/invoices/invoices';
 
 /**
  * GET /api/invoices/templates

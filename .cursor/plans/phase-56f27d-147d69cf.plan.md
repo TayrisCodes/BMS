@@ -1,4 +1,30 @@
-<!-- 147d69cf-c542-4603-8fa6-35084144da6f e266dde3-fc46-4e45-b2e9-08322a6a271c -->
+---
+name: Phase 2 – Authentication, Tenancy, and RBAC
+overview: ""
+todos:
+  - id: 9cdca461-6aff-49a8-ba31-fc59e1006a15
+    content: Choose auth approach (NextAuth vs custom) and set up base user model and indexes.
+    status: pending
+  - id: 1498f1d7-5c67-45b6-8cec-665c7456c0ce
+    content: Implement credential-based login (API + UI) and session management for staff users.
+    status: pending
+  - id: 22979252-a84b-4a38-8c3e-412363e90f57
+    content: Implement tenant phone + OTP flow (request/verify endpoints and UI).
+    status: pending
+  - id: 95670b02-1047-4147-ad06-953a9e2a01af
+    content: Create organizations collection, add organizationId to domain models, and implement organization context resolver.
+    status: pending
+  - id: c92382f4-8993-4a73-ae5b-7f44052acbf1
+    content: Define roles and permission matrix, implement role assignment storage and seeding.
+    status: pending
+  - id: b8034479-3f4f-4c81-939b-997256b4bada
+    content: Implement authorization helper and apply RBAC checks in APIs and protected UI routes.
+    status: pending
+  - id: a0c9e201-b430-49a4-ac36-d7a72b55ffe8
+    content: Implement middleware/guards to protect staff and tenant routes, redirecting unauthenticated users.
+    status: pending
+---
+
 # Phase 2 – Authentication, Tenancy, and RBAC
 
 ## Goals
@@ -107,13 +133,3 @@
 - A tenant can log in using phone + OTP and see their own tenant dashboard.
 - All multi-tenant APIs enforce `organizationId` scoping.
 - RBAC consistently blocks unauthorized actions and hides restricted UI for users without the right roles.
-
-### To-dos
-
-- [ ] Choose auth approach (NextAuth vs custom) and set up base user model and indexes.
-- [ ] Implement credential-based login (API + UI) and session management for staff users.
-- [ ] Implement tenant phone + OTP flow (request/verify endpoints and UI).
-- [ ] Create organizations collection, add organizationId to domain models, and implement organization context resolver.
-- [ ] Define roles and permission matrix, implement role assignment storage and seeding.
-- [ ] Implement authorization helper and apply RBAC checks in APIs and protected UI routes.
-- [ ] Implement middleware/guards to protect staff and tenant routes, redirecting unauthenticated users.

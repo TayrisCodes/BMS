@@ -15,16 +15,12 @@ function parseCSV(csvText: string): Array<Record<string, string>> {
   if (lines.length === 0) return [];
 
   // Parse header
-  const firstLine = lines[0];
-  if (!firstLine) return [];
-  const headers = firstLine.split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+  const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
 
   // Parse rows
   const rows: Array<Record<string, string>> = [];
   for (let i = 1; i < lines.length; i++) {
-    const lineItem = lines[i];
-    if (!lineItem) continue;
-    const line = lineItem.trim();
+    const line = lines[i].trim();
     if (!line) continue;
 
     // Simple CSV parsing (handles quoted values)
@@ -108,9 +104,6 @@ export async function POST(request: NextRequest) {
     // Validate required columns
     const requiredColumns = ['phone', 'roles'];
     const firstRow = rows[0];
-    if (!firstRow) {
-      return NextResponse.json({ error: 'CSV file has no data rows' }, { status: 400 });
-    }
     const missingColumns = requiredColumns.filter((col) => !(col in firstRow));
 
     if (missingColumns.length > 0) {
@@ -137,7 +130,6 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (!row) continue;
       const rowNumber = i + 2; // +2 because header is row 1, and arrays are 0-indexed
       const identifier = row.email || row.phone || `Row ${rowNumber}`;
 

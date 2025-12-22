@@ -83,7 +83,7 @@ export async function sendInvoiceToTenant(options: SendInvoiceOptions): Promise<
     if (notification.deliveryStatus.in_app) {
       result.channels.in_app = {
         sent: notification.deliveryStatus.in_app.sent,
-        ...(notification.deliveryStatus.in_app.read ? {} : { error: 'Not read yet' }),
+        error: notification.deliveryStatus.in_app.read ? undefined : 'Not read yet',
       };
     }
 
@@ -91,9 +91,7 @@ export async function sendInvoiceToTenant(options: SendInvoiceOptions): Promise<
       result.channels.sms = {
         sent: notification.deliveryStatus.sms.sent,
         delivered: notification.deliveryStatus.sms.delivered,
-        ...(notification.deliveryStatus.sms.error
-          ? { error: notification.deliveryStatus.sms.error }
-          : {}),
+        error: notification.deliveryStatus.sms.error || undefined,
       };
     }
 
@@ -101,23 +99,19 @@ export async function sendInvoiceToTenant(options: SendInvoiceOptions): Promise<
       result.channels.email = {
         sent: notification.deliveryStatus.email.sent,
         delivered: notification.deliveryStatus.email.delivered,
-        ...(notification.deliveryStatus.email.error
-          ? { error: notification.deliveryStatus.email.error }
-          : {}),
+        error: notification.deliveryStatus.email.error || undefined,
       };
     }
 
     // Check if any channel failed
     const hasErrors = Object.values(result.channels).some(
-      (channel) => channel.error || ('delivered' in channel && channel.delivered === false),
+      (channel) => channel.error || channel.delivered === false,
     );
 
     if (hasErrors) {
       result.success = false;
       result.errors = Object.entries(result.channels)
-        .filter(
-          ([_, status]) => status.error || ('delivered' in status && status.delivered === false),
-        )
+        .filter(([_, status]) => status.error || status.delivered === false)
         .map(([channel, status]) => `${channel}: ${status.error || 'Not delivered'}`);
     }
 

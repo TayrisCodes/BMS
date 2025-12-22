@@ -20,20 +20,23 @@ export async function saveBufferToGridFS(
   contentType?: string,
 ): Promise<StoredFile> {
   const bucket = await getBucket();
-  const uploadStream = bucket.openUploadStream(filename);
+  const uploadStream = bucket.openUploadStream(filename, {
+    contentType,
+  });
 
   await new Promise<void>((resolve, reject) => {
-    uploadStream.on('error', reject);
-    uploadStream.on('finish', resolve);
-    uploadStream.end(buffer);
+    uploadStream.end(buffer, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
   });
 
   return {
     id: uploadStream.id.toString(),
     filename,
     length: uploadStream.length ?? buffer.length,
-    uploadDate: new Date(),
-    ...(contentType ? { contentType } : {}),
+    uploadDate: uploadStream.uploadDate ?? new Date(),
+    contentType,
   };
 }
 

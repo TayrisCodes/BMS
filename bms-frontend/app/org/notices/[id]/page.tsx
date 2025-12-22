@@ -73,7 +73,7 @@ export default function NoticeDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardPage title="Notice Details">
+      <DashboardPage title="Notice Details" icon={<Bell className="h-5 w-5" />}>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Loading notice...</p>
         </div>
@@ -83,7 +83,7 @@ export default function NoticeDetailPage() {
 
   if (!notice) {
     return (
-      <DashboardPage title="Notice Details">
+      <DashboardPage title="Notice Details" icon={<Bell className="h-5 w-5" />}>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Notice not found</p>
         </div>
@@ -92,7 +92,11 @@ export default function NoticeDetailPage() {
   }
 
   return (
-    <DashboardPage title="Notice Details">
+    <DashboardPage
+      title="Notice Details"
+      description="View notice and read receipts"
+      icon={<Bell className="h-5 w-5" />}
+    >
       <div className="col-span-full space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/org/notices">
@@ -133,10 +137,10 @@ export default function NoticeDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Read Receipts ({readReceipts?.length || 0})</CardTitle>
+            <CardTitle>Read Receipts ({readReceipts.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {!readReceipts || readReceipts.length === 0 ? (
+            {readReceipts.length === 0 ? (
               <p className="text-muted-foreground">No read receipts yet.</p>
             ) : (
               <Table>

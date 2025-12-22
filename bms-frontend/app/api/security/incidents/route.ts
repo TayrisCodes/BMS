@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       description: body.description,
       location: body.location || null,
       reportedBy: context.userId,
-      reportedAt: body.reportedAt ? new Date(body.reportedAt) : new Date(),
+      reportedAt: body.reportedAt ? new Date(body.reportedAt) : undefined,
       involvedParties: body.involvedParties || null,
       status: body.status,
       linkedVisitorLogId: body.linkedVisitorLogId || null,

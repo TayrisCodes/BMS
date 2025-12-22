@@ -151,7 +151,13 @@ export default function ParkingViolationsPage() {
   };
 
   return (
-    <DashboardPage title="Parking Violations">
+    <DashboardPage
+      header={{
+        title: 'Parking Violations',
+        description: 'Manage and track parking violations',
+        icon: AlertTriangle,
+      }}
+    >
       <div className="flex justify-between items-center mb-6">
         <Link href="/org/parking/violations/new">
           <Button>

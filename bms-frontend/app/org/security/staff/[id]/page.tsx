@@ -92,7 +92,7 @@ export default function SecurityStaffDetailPage() {
             buildingId: staffData.buildingId || '',
             employeeId: staffData.employeeId || '',
             badgeNumber: staffData.badgeNumber || '',
-            hireDate: staffData.hireDate ? staffData.hireDate.split('T')[0]! : '',
+            hireDate: staffData.hireDate ? staffData.hireDate.split('T')[0] : '',
             emergencyContactName: staffData.emergencyContact?.name || '',
             emergencyContactPhone: staffData.emergencyContact?.phone || '',
             emergencyContactRelationship: staffData.emergencyContact?.relationship || '',

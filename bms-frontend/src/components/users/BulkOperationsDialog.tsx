@@ -210,9 +210,7 @@ export function BulkOperationsDialog({
                           value={user.name}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            if (newUsers[index]) {
-                              newUsers[index].name = e.target.value;
-                            }
+                            newUsers[index].name = e.target.value;
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                         />
@@ -222,9 +220,7 @@ export function BulkOperationsDialog({
                           value={user.email}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            if (newUsers[index]) {
-                              newUsers[index].email = e.target.value;
-                            }
+                            newUsers[index].email = e.target.value;
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                         />
@@ -233,9 +229,7 @@ export function BulkOperationsDialog({
                           value={user.phone}
                           onChange={(e) => {
                             const newUsers = [...inviteData.users];
-                            if (newUsers[index]) {
-                              newUsers[index].phone = e.target.value;
-                            }
+                            newUsers[index].phone = e.target.value;
                             setInviteData({ ...inviteData, users: newUsers });
                           }}
                           required
@@ -317,7 +311,7 @@ export function BulkOperationsDialog({
                     onValueChange={(value) =>
                       setUpdateData({
                         ...updateData,
-                        ...(value !== 'none' ? { status: value as UserStatus } : {}),
+                        status: value === 'none' ? undefined : (value as UserStatus),
                       })
                     }
                   >

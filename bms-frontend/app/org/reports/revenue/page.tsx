@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/lib/components/ui/button';
 import { Input } from '@/lib/components/ui/input';
 import { Label } from '@/lib/components/ui/label';
@@ -40,13 +40,17 @@ export default function RevenueTrendsPage() {
   const [forecast, setForecast] = useState<RevenueForecast | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [startDate, setStartDate] = useState<string>(
-    new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0]!,
+    new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split('T')[0],
   );
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]!);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [periodType, setPeriodType] = useState<'monthly' | 'quarterly' | 'yearly'>('monthly');
   const [forecastMonths, setForecastMonths] = useState<string>('3');
 
-  const generateForecast = useCallback(async () => {
+  useEffect(() => {
+    generateForecast();
+  }, []);
+
+  async function generateForecast() {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -64,11 +68,7 @@ export default function RevenueTrendsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [startDate, endDate, periodType, forecastMonths]);
-
-  useEffect(() => {
-    generateForecast();
-  }, [generateForecast]);
+  }
 
   return (
     <DashboardPage>

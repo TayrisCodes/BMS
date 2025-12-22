@@ -21,15 +21,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'parking', 'update');
-    if (!context.organizationId) {
-      return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
-    }
-    validateOrganizationAccess(context, context.organizationId);
 
     const vehicle = await findVehicleById(params.id, context.organizationId);
     if (!vehicle) {
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
     }
+
+    validateOrganizationAccess(context, vehicle.organizationId);
 
     if (!vehicle.isTemporary) {
       return NextResponse.json(

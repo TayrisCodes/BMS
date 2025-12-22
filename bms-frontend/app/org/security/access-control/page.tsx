@@ -109,7 +109,11 @@ export default function AccessControlPage() {
   }
 
   return (
-    <DashboardPage title="Access Control">
+    <DashboardPage
+      title="Access Control"
+      description="Manage access permissions for tenants, visitors, and staff"
+      icon={<Shield className="h-5 w-5" />}
+    >
       <div className="col-span-full flex justify-between items-center">
         <div className="flex gap-2">
           <Link href="/org/security/access-control/tenants">

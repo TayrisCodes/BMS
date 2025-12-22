@@ -45,6 +45,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
+
     validateOrganizationAccess(context, notice.organizationId);
 
     const formData = await request.formData();

@@ -21,19 +21,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'read');
+
     if (!context.organizationId) {
       return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
     }
 
     const notice = await findNoticeById(params.id, context.organizationId);
-    if (!notice) {
-      return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
-    }
-    validateOrganizationAccess(context, notice.organizationId);
 
     if (!notice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
+
+    validateOrganizationAccess(context, notice.organizationId);
 
     return NextResponse.json({ notice });
   } catch (error) {
@@ -55,17 +54,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'update');
+
     if (!context.organizationId) {
       return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
     }
 
     const updates = await request.json();
 
-    const notice = await findNoticeById(params.id, context.organizationId);
-    if (!notice) {
+    const existingNotice = await findNoticeById(params.id, context.organizationId);
+    if (!existingNotice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
-    validateOrganizationAccess(context, notice.organizationId);
+
+    validateOrganizationAccess(context, existingNotice.organizationId);
 
     const updatedNotice = await updateNotice(params.id, context.organizationId, updates);
 
@@ -93,15 +94,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     requirePermission(context, 'notices', 'delete');
+
     if (!context.organizationId) {
       return NextResponse.json({ error: 'Organization context is required' }, { status: 403 });
     }
 
-    const notice = await findNoticeById(params.id, context.organizationId);
-    if (!notice) {
+    const existingNotice = await findNoticeById(params.id, context.organizationId);
+    if (!existingNotice) {
       return NextResponse.json({ error: 'Notice not found' }, { status: 404 });
     }
-    validateOrganizationAccess(context, notice.organizationId);
+
+    validateOrganizationAccess(context, existingNotice.organizationId);
 
     const deleted = await deleteNotice(params.id, context.organizationId);
 

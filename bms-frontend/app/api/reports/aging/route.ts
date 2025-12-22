@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     // Require permission to read reports
-    requirePermission(context, 'reporting', 'read');
+    requirePermission(context, 'reports', 'read');
 
     const organizationId = context.organizationId;
     if (!organizationId) {

@@ -43,15 +43,8 @@ export async function GET(request: NextRequest) {
     if (status) filters.status = status;
     if (vehicleId) filters.vehicleId = vehicleId;
     if (tenantId) filters.tenantId = tenantId;
-    if (startDate) {
-      filters.reportedAt = { $gte: new Date(startDate) };
-    }
-    if (endDate) {
-      filters.reportedAt = {
-        ...(filters.reportedAt && typeof filters.reportedAt === 'object' ? filters.reportedAt : {}),
-        $lte: new Date(endDate),
-      };
-    }
+    if (startDate) filters.reportedAt = { $gte: new Date(startDate) };
+    if (endDate) filters.reportedAt = { ...filters.reportedAt, $lte: new Date(endDate) };
 
     const violations = await listParkingViolations(context.organizationId, filters);
 

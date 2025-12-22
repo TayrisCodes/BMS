@@ -83,18 +83,24 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const body = await request.json();
 
-    const updates: Partial<CreateSecurityStaffInput> = {};
+    const updates: Partial<CreateSecurityStaffInput> = {
+      buildingId: body.buildingId !== undefined ? body.buildingId : undefined,
+      assignedBuildings: body.assignedBuildings !== undefined ? body.assignedBuildings : undefined,
+      employeeId: body.employeeId !== undefined ? body.employeeId : undefined,
+      badgeNumber: body.badgeNumber !== undefined ? body.badgeNumber : undefined,
+      hireDate:
+        body.hireDate !== undefined ? (body.hireDate ? new Date(body.hireDate) : null) : undefined,
+      emergencyContact: body.emergencyContact !== undefined ? body.emergencyContact : undefined,
+      certifications: body.certifications !== undefined ? body.certifications : undefined,
+      notes: body.notes !== undefined ? body.notes : undefined,
+    };
 
-    if (body.buildingId !== undefined) updates.buildingId = body.buildingId;
-    if (body.assignedBuildings !== undefined) updates.assignedBuildings = body.assignedBuildings;
-    if (body.employeeId !== undefined) updates.employeeId = body.employeeId;
-    if (body.badgeNumber !== undefined) updates.badgeNumber = body.badgeNumber;
-    if (body.hireDate !== undefined) {
-      updates.hireDate = body.hireDate ? new Date(body.hireDate) : null;
-    }
-    if (body.emergencyContact !== undefined) updates.emergencyContact = body.emergencyContact;
-    if (body.certifications !== undefined) updates.certifications = body.certifications;
-    if (body.notes !== undefined) updates.notes = body.notes;
+    // Remove undefined values
+    Object.keys(updates).forEach((key) => {
+      if (updates[key as keyof typeof updates] === undefined) {
+        delete updates[key as keyof typeof updates];
+      }
+    });
 
     const staff = await updateSecurityStaff(id, updates, context.organizationId);
 
